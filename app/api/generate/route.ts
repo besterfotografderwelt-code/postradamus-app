@@ -104,7 +104,7 @@ export async function POST(request: Request) {
   // Demo mode override
   if (process.env.WEDDINGFLOW_AI_MODE === "demo") {
     return NextResponse.json({
-      content: generateDemoContent(body.type, body.context),
+      content: generateDemoContent(body.type ?? "instagram_caption", body.context),
       generator: "demo"
     });
   }
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "system",
-            content: `Du schreibst Instagram-Captions in ICH-Form. STRIKTES VERBOT: Inmitten, Umarmung, Herz, Herzen, blühend, Pracht, Zauber, märchenhaft, unvergesslich, Magie, traumhaft, Moment, wunderschön, besondere. Schreib wie ein echter Mensch. Kurze Sätze. Authentisch. Direkt. Nahbar. Branche: ${branche}.`
+            content: `Du schreibst Instagram-Captions in ICH-Form. STRIKTES VERBOT: Inmitten, Umarmung, Herz, Herzen, blühend, Pracht, Zauber, märchenhaft, unvergesslich, Magie, traumhaft, Moment, wunderschön, besondere. Schreib wie ein echter Mensch. Kurze Sätze. Authentisch. Direkt. Nahbar. Branche: ${body.context?.businessType ?? "allgemein"}.`
           },
           { role: "user", content: prompt }
         ],
