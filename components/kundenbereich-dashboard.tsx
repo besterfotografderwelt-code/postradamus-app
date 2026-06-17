@@ -291,21 +291,35 @@ export function KundenbereichDashboard() {
                 : "Aktives Paket"}
             </span>
           </div>
-          <div className="kunden-quota">
-            <div className="kunden-quota-bar">
-              <div
-                className="kunden-quota-fill"
-                style={{ width: `${Math.round((DEMO_USER.quotaUsed / DEMO_USER.quotaTotal) * 100)}%` }}
-              />
+          {profile?.plan === "studio" ? (
+            <div className="kunden-quota">
+              <div className="kunden-quota-bar">
+                <div className="kunden-quota-fill" style={{ width: "100%", background: "var(--good)" }} />
+              </div>
+              <span className="kunden-meta">Unlimited – Studio-Paket</span>
             </div>
-            <span className="kunden-meta">
-              {DEMO_USER.quotaUsed} / {DEMO_USER.quotaTotal} Bilder diesen Monat
-            </span>
-          </div>
+          ) : (
+            <div className="kunden-quota">
+              <div className="kunden-quota-bar">
+                <div className="kunden-quota-fill" style={{ width: `${Math.min(100, (projects.length / 50) * 100)}%` }} />
+              </div>
+              <span className="kunden-meta">{projects.length} Projekte</span>
+            </div>
+          )}
         </div>
         <div className="kunden-card-side">
-          <span className="kunden-meta">Nächste Abbuchung</span>
-          <strong>{DEMO_USER.nextBilling}</strong>
+          <span className="kunden-meta">
+            {profile?.trial_end && new Date(profile.trial_end).getFullYear() > 2030
+              ? "Unlimitierter Testzugang"
+              : profile?.trial_end && new Date(profile.trial_end) > new Date()
+                ? "Trial aktiv"
+              : "Plan aktiv"}
+          </span>
+          <strong>
+            {profile?.trial_end
+              ? `bis ${new Date(profile.trial_end).toLocaleDateString("de")}`
+              : "–"}
+          </strong>
         </div>
       </div>
 
@@ -470,7 +484,7 @@ export function KundenbereichDashboard() {
         ) : (
           <div className="cancel-confirm">
             <p>
-              Bist du sicher? Dein Zugang läuft am {DEMO_USER.nextBilling} ab. Du kannst bis dahin
+              Bist du sicher? Dein Zugang läuft am {profile?.trial_end ? new Date(profile.trial_end).toLocaleDateString("de") : "Ende des Monats"} ab.
               weiterhin alle Funktionen nutzen.
             </p>
             <div className="content-actions">
