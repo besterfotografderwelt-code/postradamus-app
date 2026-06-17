@@ -252,7 +252,7 @@ export function KundenbereichDashboard() {
       <h1>Hallo, {profile?.full_name?.split(" ")[0] || "Kunde"} 👋</h1>
 
       {/* ── Projekte ── */}
-      {projectsLoaded && projects.length > 0 && (
+      {loaded && projects.length > 0 && (
         <section className="kunden-section">
           <h2>Deine Projekte</h2>
           <div className="project-list">
@@ -271,7 +271,7 @@ export function KundenbereichDashboard() {
           </Link>
         </section>
       )}
-      {projectsLoaded && projects.length === 0 && (
+      {loaded && projects.length === 0 && (
         <section className="kunden-section">
           <h2>Deine Projekte</h2>
           <p className="kunden-section-desc">Noch keine Projekte. Leg gleich dein erstes an.</p>
