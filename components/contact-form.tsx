@@ -2,7 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 
-const FORMSPREE_URL = "https://formspree.io/f/xrelwzop";
+const FORMSPREE_URL = "https://formspree.io/f/mqeoodyj";
 
 type Status = "idle" | "sending" | "success" | "error";
 
