@@ -48,10 +48,22 @@ export async function POST(request: Request) {
     const raw = payload.choices?.[0]?.message?.content?.trim() ?? "";
     if (!raw) throw new Error("Leere Antwort");
 
-    // Strip any image description prefix the model might have added
-    const cleaned = raw
-      .replace(/^.*?(?:Auf diesem Bild|Auf dem Bild|In diesem Bild|Das Bild zeigt|Ich sehe|Man sieht).*?[.:]\s*/gi, "")
+    // Strip image description: remove any line containing these keywords
+    let cleaned = raw
+      .split(/\n/)
+      .filter((line: string) => {
+        const l = line.toLowerCase();
+        return !l.includes("auf diesem bild") && !l.includes("auf dem bild") && !l.includes("das bild") && !l.includes("ich sehe") && !l.includes("man sieht") && !l.includes("zu sehen") && !l.includes("erkennbar") && !l.includes("abgebildet");
+      })
+      .join("\n")
       .trim();
+
+    // Replace banned poetic words
+    const banned = ["unvergesslich", "unvergesslicher", "unvergessliche", "märchenhaft", "zauberhaft", "traumhaft", "magisch", "blühend", "Pracht"];
+    for (const w of banned) {
+      const re = new RegExp(w, "gi");
+      cleaned = cleaned.replace(re, w === "unvergesslich" || w === "unvergesslicher" || w === "unvergessliche" ? "besonders" : w === "märchenhaft" ? "wunderschön" : w === "zauberhaft" ? "schön" : w === "traumhaft" ? "perfekt" : w === "magisch" ? "besonders" : w === "blühend" ? "frisch" : "beeindruckend");
+    }
 
     const content = cleaned || raw;
     return NextResponse.json({ content, generator: "openai-vision" });
