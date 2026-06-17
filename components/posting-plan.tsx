@@ -378,8 +378,8 @@ function generatePostSlots(images: ProjectImage[], tone: string, businessType = 
     : normalizedBusinessType === "restaurant" ? restaurantHashtags
     : normalizedBusinessType === "produktfotograf" ? productHashtags
     : genericHashtagSets;
-  const activeCaptions = toneKey && toneCaptions[toneKey] ? [...toneCaptions[toneKey], ...baseCaptions] : baseCaptions;
-  function nextCaption() { return activeCaptions[idx++ % activeCaptions.length]; }
+  const activeCaptions = ["KI-Caption wird generiert …"];
+  function nextCaption() { return activeCaptions[0]; }
 
   const weddingStoryCaptions: Record<string, string[]> = {
     romantisch: ["Hinter den Kulissen der Liebe, wo die stillen Sekunden oft schon die schönste Stimmung tragen.", "Ein kleiner Blick vor dem großen Moment, bevor die eigentliche Geschichte beginnt.", "Leise Vorfreude, große Gefühle und genau die Ruhe, die man später noch spürt."],
@@ -658,7 +658,6 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   const [imageOverrides, setImageOverrides] = useState<Record<string, ProjectImage[]>>({});
   const [cropPositions, setCropPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [hiddenPosts, setHiddenPosts] = useState<Set<string>>(new Set());
-  const [batchGenerating, setBatchGenerating] = useState(false);
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [analyzedSlots, setAnalyzedSlots] = useState<Record<string, AnalyzedSlotContent>>({});
   const [slotTones, setSlotTones] = useState<Record<string, string>>({});
@@ -699,6 +698,29 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
     [filteredSlots, hiddenPosts]
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
+
+  // Auto-generate KI-Captions when slots or tone change
+  useEffect(() => {
+    const validSlots = filteredSlots.filter((s) => s.type !== "story" && s.type !== "reel");
+    if (validSlots.length === 0 || !images.length) return;
+    let cancelled = false;
+    async function generate() {
+      try {
+        const res = await fetch("/api/generate/batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ images: images.slice(0, 30), project: { couple_name: images[0]?.name ?? "Projekt", businessName: businessType }, tone, businessType, styleProfile }),
+        });
+        const data = await res.json();
+        if (cancelled || !data.captions?.length) return;
+        const updated: Record<string, string> = {};
+        validSlots.forEach((slot, i) => { if (data.captions[i]) updated[slot.id] = data.captions[i]; });
+        setEditedCaptions((prev) => ({ ...prev, ...updated }));
+      } catch { /* ignore */ }
+    }
+    generate();
+    return () => { cancelled = true; };
+  }, [filteredSlots, tone, businessType, styleProfile, images]);
 
   const plannedPosts = useMemo<PlannedPost[]>(() => {
     return visibleSlots.map((slot) => {
@@ -830,45 +852,10 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
         </div>
       </div>
 
-      <div className="plan-edit-hint" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <strong>Jeder Post bleibt bearbeitbar.</strong>
-<span>Über &bdquo;Bearbeiten&ldquo; kannst du Caption, Stil, markierte Accounts, Hashtags, Bildbeschnitt und Bildauswahl ändern.</span>
-        </div>
-        <button
-          className="button"
-          disabled={!!batchGenerating}
-          onClick={async () => {
-            setBatchGenerating(true);
-            try {
-              const res = await fetch("/api/generate/batch", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  images: images.slice(0, 30),
-                  project: { couple_name: images[0]?.name ?? "Projekt", businessName: businessType },
-                  tone,
-                  businessType,
-                  styleProfile,
-                }),
-              });
-              const data = await res.json();
-              if (data.captions?.length) {
-                const updated: Record<string, string> = {};
-                filteredSlots.forEach((slot, i) => {
-                  if (data.captions[i]) updated[slot.id] = data.captions[i];
-                });
-                setEditedCaptions(prev => ({ ...prev, ...updated }));
-              }
-            } catch { /* ignore */ }
-            finally { setBatchGenerating(false); }
-          }}
-          type="button"
-        >
-          {batchGenerating ? "Generiere …" : "🤖 KI-Captions generieren"}
-        </button>
+      <div className="plan-edit-hint">
+        <strong>Jeder Post bleibt bearbeitbar.</strong>
+        <span>Über &bdquo;Bearbeiten&ldquo; kannst du Caption, Stil, markierte Accounts, Hashtags, Bildbeschnitt und Bildauswahl ändern.</span>
       </div>
-
       <div className="feed-grid">
         {displayedSlots.map((slot) => {
           const isExpanded = expandedSlot === slot.id;
