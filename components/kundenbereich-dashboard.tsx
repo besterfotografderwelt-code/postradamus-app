@@ -57,7 +57,7 @@ export function KundenbereichDashboard() {
   const [projectsLoaded, setProjectsLoaded] = useState(false);
 
   /* Auth check */
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const [authed, setAuthed] = useState<boolean | null>(false);
 
   useEffect(() => {
     fetch("/api/projects")
@@ -246,14 +246,6 @@ export function KundenbereichDashboard() {
     );
   }
 
-  if (authed === null) {
-    return (
-      <section className="content-page">
-        <div className="eyebrow">Kundenbereich</div>
-        <h1>Einen Moment …</h1>
-      </section>
-    );
-  }
 
   return (
     <section className="content-page" style={{ paddingBottom: 60 }}>
