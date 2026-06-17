@@ -699,30 +699,57 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
 
-  // Auto-generate KI-Captions via Batch mit Radikal-Varietät
+  // Auto-generate KI-Captions – JEDER Post ein EIGENER API-Call
   useEffect(() => {
     const validSlots = filteredSlots.filter((s) => s.type !== "story" && s.type !== "reel");
     if (validSlots.length === 0 || !images.length) return;
     let cancelled = false;
+
+    const angles = [
+      "der entscheidende Moment, der alles verändert hat",
+      "das kleine Detail, das kaum jemand bemerkt hat",
+      "die Stimmung zwischen den großen Ereignissen",
+      "was VOR diesem Moment passiert ist",
+      "was NACH diesem Moment passiert ist",
+      "warum genau DIESES Bild mein Favorit ist",
+      "was der Kunde beim Anblick gesagt hat",
+      "die größte Herausforderung bei diesem Shot",
+      "ein lustiger Moment hinter den Kulissen",
+      "das Licht, das alles perfekt gemacht hat",
+      "warum ich diesen Ort dafür ausgewählt habe",
+      "der Augenblick, den man nicht planen kann",
+      "was dieses Bild für die ganze Serie bedeutet",
+      "mein erster Gedanke als ich das Bild sah",
+    ];
+
     async function generate() {
-      try {
-        const res = await fetch("/api/generate/batch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            images: images.slice(0, 30),
-            project: { couple_name: images[0]?.name ?? "Projekt", businessName: businessType },
-            tone,
-            businessType,
-            styleProfile,
-          }),
-        });
-        const data = await res.json();
-        if (cancelled || !data.captions?.length) return;
-        const updated: Record<string, string> = {};
-        validSlots.forEach((slot, i) => { if (data.captions[i]) updated[slot.id] = data.captions[i]; });
-        setEditedCaptions((prev) => ({ ...prev, ...updated }));
-      } catch { /* ignore */ }
+      for (let i = 0; i < validSlots.length; i++) {
+        if (cancelled) return;
+        const slot = validSlots[i];
+        const img = slot.images[0];
+        const angle = angles[i % angles.length];
+        try {
+          const res = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "instagram_caption",
+              context: {
+                project: { id: img?.id ?? img?.name ?? "project", couple_name: img?.name ?? "Projekt", businessType },
+                favoriteCount: 1,
+                tags: img?.tags ?? [],
+                extraInstructions: `Tonalität: ${tone || "natürlich"}. Dein Fokus: ${angle}. Schreibe IMMER in ICH-Form (nicht WIR). Keine Floskeln. Kein "Inmitten". Kein "Umarmung". Kein "Herzen". Schreib wie ein echter Mensch.`,
+                styleProfile: styleProfile || undefined,
+              },
+            }),
+          });
+          if (cancelled) return;
+          const data = await res.json();
+          if (data.content) {
+            setEditedCaptions((prev) => ({ ...prev, [slot.id]: data.content }));
+          }
+        } catch { /* skip */ }
+      }
     }
     generate();
     return () => { cancelled = true; };

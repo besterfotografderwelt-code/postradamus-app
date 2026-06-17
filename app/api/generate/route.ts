@@ -70,8 +70,8 @@ async function generateWithDeepSeek(prompt: string, businessType?: string) {
       ],
       max_tokens: 1400,
       temperature: 1.0,
-      frequency_penalty: 0.8,
-      presence_penalty: 0.8
+      frequency_penalty: 1.2,
+      presence_penalty: 1.2
     }),
     signal: AbortSignal.timeout(45_000)
   });
