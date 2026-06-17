@@ -12,6 +12,7 @@ export type GenerationContext = {
   businessType?: string;
   businessLabel?: string;
   styleProfile?: string;
+  thumbnailUrl?: string;
 };
 
 type BusinessFamily = "wedding" | "fitness" | "restaurant" | "product" | "generic";

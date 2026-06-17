@@ -109,13 +109,36 @@ export async function POST(request: Request) {
     });
   }
 
-  // Use OpenAI exclusively for quality
+  // Use OpenAI Vision to actually SEE each image for unique captions
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
     return NextResponse.json({ error: "OpenAI-Key fehlt", generator: "none" }, { status: 500 });
   }
 
+  // If image thumbnail URL is provided, use Vision API
+  const imageUrl = body.context?.thumbnailUrl;
+
   try {
+    const messages: Array<Record<string, unknown>> = [
+      {
+        role: "system",
+        content: `Du schreibst EINE Instagram-Caption basierend auf dem Bild das du siehst. ICH-Form. Authentisch. Direkt. Nahbar. Keine poetischen Floskeln.${body.context?.extraInstructions ? ` EXTRA: ${body.context.extraInstructions}` : ""}${body.context?.styleProfile ? ` STIL: ${body.context.styleProfile}` : ""}`
+      },
+    ];
+
+    if (imageUrl) {
+      // Vision mode: send image + text
+      messages.push({
+        role: "user",
+        content: [
+          { type: "image_url", image_url: { url: imageUrl } },
+          { type: "text", text: `Beschreibe in 2-3 Sätzen was du auf diesem Bild siehst. Dann schreibe eine Instagram-Caption in ICH-Form (80-120 Wörter + 8-10 Hashtags) die auf dem basiert was du SIEHST. Branche: ${body.context?.businessType || "allgemein"}.` },
+        ],
+      });
+    } else {
+      messages.push({ role: "user", content: prompt });
+    }
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -124,15 +147,9 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `Du schreibst Instagram-Captions in ICH-Form. STRIKTES VERBOT: Inmitten, Umarmung, Herz, Herzen, blühend, Pracht, Zauber, märchenhaft, unvergesslich, Magie, traumhaft, Moment, wunderschön, besondere. Schreib wie ein echter Mensch. Kurze Sätze. Authentisch. Direkt. Nahbar. Branche: ${body.context?.businessType ?? "allgemein"}.`
-          },
-          { role: "user", content: prompt }
-        ],
+        messages,
         max_tokens: 1400,
-        temperature: 1.0,
+        temperature: 0.9,
         frequency_penalty: 1.5,
         presence_penalty: 1.5,
       }),
@@ -142,7 +159,7 @@ export async function POST(request: Request) {
     const payload: unknown = await response.json();
     const content = readChatCompletionText(payload);
     if (content) {
-      return NextResponse.json({ content, generator: "openai" });
+      return NextResponse.json({ content, generator: "openai-vision" });
     }
     return NextResponse.json({ error: "OpenAI: Kein Inhalt", generator: "openai" }, { status: 500 });
   } catch {
