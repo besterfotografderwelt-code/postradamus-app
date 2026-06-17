@@ -27,18 +27,22 @@ export async function POST(request: Request) {
 
   const count = Math.min((images || []).length, 30);
   const hooks = [
-    "STARTER als wörtliche Frage",
-    "STARTER als kurzes starkes Statement",
+    "STARTER als wörtliche Frage an den Leser",
+    "STARTER als kurzes starkes Statement (max 6 Wörter)",
     "STARTER als emotionale Beobachtung",
-    "STARTER als Aufzählung von 2-3 Details",
-    "STARTER als direkte Ansprache des Lesers mit 'Du'",
+    "STARTER als Aufzählung von 2-3 konkreten Details aus den Bildern",
+    "STARTER als direkte Ansprache mit 'Du'",
     "STARTER als Mini-Story von 15-20 Wörtern",
     "STARTER als Call-to-Action/Aufforderung",
     "STARTER als Vergleich (früher/heute oder Erwartung/Realität)",
-    "STARTER als überraschende Aussage",
-    "STARTER als kurze Szene in einem Satz",
-    "STARTER als rhetorische Frage die niemand stellen würde",
-    "STARTER als 'Pro-Tipp' für die Branche",
+    "STARTER als überraschende Aussage die man nicht erwartet",
+    "STARTER als kurze Szene in einem Satz gemalt",
+    "STARTER als rhetorische Frage",
+    "STARTER als branchenspezifischer Pro-Tipp",
+    "STARTER als Zitat (erfunden, aber glaubwürdig)",
+    "STARTER als Erinnerung an ein Gefühl",
+    "STARTER als Ein-Wort-Satz gefolgt von Erklärung",
+    "STARTER als Zukunftsausblick / Was kommt als Nächstes",
   ];
   const assignments = Array.from({ length: count }, (_, i) => hooks[i % hooks.length]);
   const prompt = [
@@ -54,9 +58,11 @@ export async function POST(request: Request) {
     ...(count > 3 ? ['4. Caption 4 MUSS als ' + assignments[3] + ' beginnen.'] : []),
     ...(count > 4 ? ['5. Caption 5 MUSS als ' + assignments[4] + ' beginnen.'] : []),
     ...(count > 5 ? ['6. Caption 6 MUSS als ' + assignments[5] + ' beginnen.'] : []),
-    'JEDE Caption ist EINZIGARTIG. Keine ähnlichen Satzanfänge, keine gleichen Wörter am Anfang.',
+    'JEDE Caption ist EINZIGARTIG. Keine ähnlichen Satzanfänge, keine gleichen Wörter am Anfang, kein gleicher Satzbau.',
     'Jede Caption: 80-120 Wörter, endet mit 8-10 thematisch passenden Hashtags.',
-    'KEINE Floskel "Inmitten von", kein "Es war einmal", kein "Ein Tag".',
+    'JEDE ZWEITE Caption MUSS einen Call-to-Action enthalten (z.B. "Schreib uns", "Probier es aus", "Was meinst du?", "Jetzt entdecken").',
+    'ABSOLUTES VERBOT: "Inmitten von", "Ein Tag voller", "Es war einmal", "Man nehme". Keine Floskeln.',
+    'Satzlängen wild durchmischen: mal 3 Wörter, dann 18. Kein Rhythmus-Muster.',
     'Format: "Caption 1:" dann Text, "Caption 2:" dann Text, usw.',
     ...(styleProfile ? [`Stil: ${styleProfile}`] : []),
   ].join("\n");
