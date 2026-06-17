@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   const { error } = await supabase
     .from("profiles")
     .update({
-      plan: "studio",
+      plan: "growth",
       trial_start: new Date().toISOString(),
       trial_end: trialEnd.toISOString(),
       updated_at: new Date().toISOString(),
