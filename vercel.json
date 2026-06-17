@@ -1,16 +1,5 @@
 {
   "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "www.postradamus.ai" }],
-      "destination": "https://postradamus.ai/$1",
-      "permanent": true
-    },
-    {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "www.postradamus.ai" }],
-      "destination": "https://postradamus.ai/:path*",
-      "permanent": true
-    }
+    { "source": "/:path*", "has": [{ "type": "host", "value": "www.postradamus.ai" }], "destination": "https://postradamus.ai/:path*", "permanent": true }
   ]
 }
