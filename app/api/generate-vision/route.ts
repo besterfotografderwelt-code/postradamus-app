@@ -57,6 +57,11 @@ function validateCaption(caption: string, previousOpenings: string[] = []): stri
     }
   }
 
+  // Check ICH-Form (forbidden for photographer perspective)
+  if (/\bich\b|\bmir\b|\bmich\b|\bmein\b|\bmeine\b|\bunser\b|\buns\b|\bwir\b/i.test(caption)) {
+    errors.push("Caption enthält Ich/Wir-Form – Fotografen-Perspektive erforderlich");
+  }
+
   // Count hashtags
   const hashtags = caption.match(/#[\w\u00C0-\u024F]+/g) || [];
   if (hashtags.length < 8 || hashtags.length > 10) {
@@ -143,7 +148,7 @@ export async function POST(request: Request) {
     const captionRes = await callOpenAI(TEXT_MODEL, [
       {
         role: "system",
-        content: `Du schreibst Instagram-Captions für einen Fotografen. Der Fotograf hat das Bild aufgenommen. Schreibe aus Perspektive des Fotografen (er/sie-Beschreibung, nie Ich-Form). Authentisch. Direkt. Kein Kitsch.${onBoardingString ? ` STIL: ${onBoardingString}` : ""}`
+        content: `Du schreibst Instagram-Captions für einen professionellen Hochzeitsfotografen. DU BIST DER FOTOGRAF, NICHT die Braut oder der Bräutigam. Beschreibe den Moment aus Fotografen-Sicht. Kein "ich", "mir", "mich", "wir", "uns". Der Fotograf hat das Bild gemacht. Authentisch. Direkt. Kein Kitsch.${onBoardingString ? ` STIL: ${onBoardingString}` : ""}`
       },
       {
         role: "user",
