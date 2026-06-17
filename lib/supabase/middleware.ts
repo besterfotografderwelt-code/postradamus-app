@@ -23,10 +23,10 @@ export async function updateSession(request: NextRequest) {
     }
   });
 
-  let user: Database["public"]["Tables"]["profiles"]["Row"] | null = null;
+  let user: { id: string } | null = null;
   try {
     const result = await supabase.auth.getUser();
-    user = result.data?.user ?? null;
+    user = result.data?.user as { id: string } | null;
   } catch {
     // getUser() failed (timeout/network) – treat as unauthenticated
     user = null;
