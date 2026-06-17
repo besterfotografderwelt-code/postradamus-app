@@ -705,6 +705,16 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
     if (validSlots.length === 0 || !images.length) return;
     let cancelled = false;
 
+    // Clear captions for slots that no longer exist
+    const slotIds = new Set(validSlots.map((s) => s.id));
+    setEditedCaptions((prev) => {
+      const next: Record<string, string> = {};
+      for (const [id, val] of Object.entries(prev)) {
+        if (slotIds.has(id)) next[id] = val;
+      }
+      return next;
+    });
+
     async function imageToBase64(img: { thumbnailUrl: string }): Promise<string | null> {
       try {
         const res = await fetch(img.thumbnailUrl);
@@ -758,11 +768,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
           });
           const data = await res.json();
           if (data.content && !cancelled) {
-            // Lock caption – never overwrite once set
-            setEditedCaptions((prev) => {
-              if (prev[slot.id]) return prev; // Already set, don't touch
-              return { ...prev, [slot.id]: data.content };
-            });
+            setEditedCaptions((prev) => ({ ...prev, [slot.id]: data.content }));
             const opening = data.content.split(/[.!?]/)[0].trim().toLowerCase();
             if (opening) generatedOpenings.push(opening);
           }
