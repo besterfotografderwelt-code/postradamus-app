@@ -26,6 +26,21 @@ export async function POST(request: Request) {
     .join("\n");
 
   const count = Math.min((images || []).length, 30);
+  const hooks = [
+    "STARTER als wörtliche Frage",
+    "STARTER als kurzes starkes Statement",
+    "STARTER als emotionale Beobachtung",
+    "STARTER als Aufzählung von 2-3 Details",
+    "STARTER als direkte Ansprache des Lesers mit 'Du'",
+    "STARTER als Mini-Story von 15-20 Wörtern",
+    "STARTER als Call-to-Action/Aufforderung",
+    "STARTER als Vergleich (früher/heute oder Erwartung/Realität)",
+    "STARTER als überraschende Aussage",
+    "STARTER als kurze Szene in einem Satz",
+    "STARTER als rhetorische Frage die niemand stellen würde",
+    "STARTER als 'Pro-Tipp' für die Branche",
+  ];
+  const assignments = Array.from({ length: count }, (_, i) => hooks[i % hooks.length]);
   const prompt = [
     `Du schreibst ${count} Instagram-Captions für ${businessLabel}.`,
     `Projekt: ${project?.couple_name || project?.businessName || "Kundenprojekt"}.`,
@@ -33,13 +48,17 @@ export async function POST(request: Request) {
     `Bildinformationen:\n${imageList}`,
     ``,
     'ERSTELLE JETZT GENAU ' + count + ' CAPTIONS. REGELN:',
-    '1. JEDE Caption muss KOMPLETT ANDERS sein – anderer Einstieg, andere Stimmung, anderer Satzbau',
-    '2. Keine zwei Captions dürfen auch nur ähnlich klingen',
-    '3. Variiere zwischen: Frage-Aufhänger, Statement, emotionale Beobachtung, Call-to-Action, Storytelling-Mini',
-    '4. Jede Caption: 80-120 Wörter, endet mit 8-10 Hashtags',
-    '5. Format: "Caption 1:" dann Text, "Caption 2:" dann Text, usw.',
-    '6. Keine Floskeln, keine Phrasen, keine Wiederholungen zwischen den Captions',
-    ...(styleProfile ? [`Stil des Nutzers: ${styleProfile}`] : []),
+    '1. Caption 1 MUSS als ' + assignments[0] + ' beginnen.',
+    ...(count > 1 ? ['2. Caption 2 MUSS als ' + assignments[1] + ' beginnen.'] : []),
+    ...(count > 2 ? ['3. Caption 3 MUSS als ' + assignments[2] + ' beginnen.'] : []),
+    ...(count > 3 ? ['4. Caption 4 MUSS als ' + assignments[3] + ' beginnen.'] : []),
+    ...(count > 4 ? ['5. Caption 5 MUSS als ' + assignments[4] + ' beginnen.'] : []),
+    ...(count > 5 ? ['6. Caption 6 MUSS als ' + assignments[5] + ' beginnen.'] : []),
+    'JEDE Caption ist EINZIGARTIG. Keine ähnlichen Satzanfänge, keine gleichen Wörter am Anfang.',
+    'Jede Caption: 80-120 Wörter, endet mit 8-10 thematisch passenden Hashtags.',
+    'KEINE Floskel "Inmitten von", kein "Es war einmal", kein "Ein Tag".',
+    'Format: "Caption 1:" dann Text, "Caption 2:" dann Text, usw.',
+    ...(styleProfile ? [`Stil: ${styleProfile}`] : []),
   ].join("\n");
 
   const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
