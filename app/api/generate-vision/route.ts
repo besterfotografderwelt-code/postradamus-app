@@ -48,12 +48,19 @@ export async function POST(request: Request) {
     const raw = payload.choices?.[0]?.message?.content?.trim() ?? "";
     if (!raw) throw new Error("Leere Antwort");
 
-    // Strip image description: remove any line containing these keywords
-    let cleaned = raw
+    // Strip everything before "Caption:" if present
+    let cleaned = raw;
+    const captionMatch = cleaned.match(/\*\*Caption:\*\*\s*/i) || cleaned.match(/Caption:\s*/i);
+    if (captionMatch && captionMatch.index !== undefined) {
+      cleaned = cleaned.substring(captionMatch.index + captionMatch[0].length).trim();
+    }
+
+    // Split into lines and remove any containing description keywords
+    cleaned = cleaned
       .split(/\n/)
       .filter((line: string) => {
         const l = line.toLowerCase();
-        return !l.includes("auf diesem bild") && !l.includes("auf dem bild") && !l.includes("das bild") && !l.includes("ich sehe") && !l.includes("man sieht") && !l.includes("zu sehen") && !l.includes("erkennbar") && !l.includes("abgebildet");
+        return !l.includes("auf diesem bild") && !l.includes("auf dem bild") && !l.includes("das bild") && !l.includes("ich sehe") && !l.includes("man sieht") && !l.includes("zu sehen") && !l.includes("erkennbar") && !l.includes("abgebildet") && !l.includes("frisch vermählt") && !l.startsWith("in diesem bild") && !l.includes("die braut") && !l.includes("der bräutigam") && !l.includes("das licht scheint") && !l.includes("das foto") && !l.includes("die aufnahme");
       })
       .join("\n")
       .trim();
@@ -62,7 +69,7 @@ export async function POST(request: Request) {
     const banned = ["unvergesslich", "unvergesslicher", "unvergessliche", "märchenhaft", "zauberhaft", "traumhaft", "magisch", "blühend", "Pracht"];
     for (const w of banned) {
       const re = new RegExp(w, "gi");
-      cleaned = cleaned.replace(re, w === "unvergesslich" || w === "unvergesslicher" || w === "unvergessliche" ? "besonders" : w === "märchenhaft" ? "wunderschön" : w === "zauberhaft" ? "schön" : w === "traumhaft" ? "perfekt" : w === "magisch" ? "besonders" : w === "blühend" ? "frisch" : "beeindruckend");
+      cleaned = cleaned.replace(re, "besonders");
     }
 
     const content = cleaned || raw;
