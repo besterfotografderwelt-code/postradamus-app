@@ -99,12 +99,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Projektkontext oder Inhaltstyp fehlt." }, { status: 400 });
   }
 
-  const prompt = buildGenerationPrompt(body.type, body.context);
+  const prompt = buildGenerationPrompt(body.type!, body.context!);
 
   // Demo mode override
   if (process.env.WEDDINGFLOW_AI_MODE === "demo") {
     return NextResponse.json({
-      content: generateDemoContent((body.type ?? "instagram_caption") as ProjectOutputType, body.context as GenerationContext),
+      content: generateDemoContent((body.type || 'instagram_caption') as ProjectOutputType, (body.context || { project: { id: 'demo', coupleName: 'Demo' }, favoriteCount: 0, tags: [], extraInstructions: '' }) as GenerationContext),
       generator: "demo"
     });
   }
