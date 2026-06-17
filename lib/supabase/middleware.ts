@@ -23,9 +23,14 @@ export async function updateSession(request: NextRequest) {
     }
   });
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  let user: any = null;
+  try {
+    const result = await supabase.auth.getUser();
+    user = result.data?.user ?? null;
+  } catch {
+    // getUser() failed (timeout/network) – treat as unauthenticated
+    user = null;
+  }
   const pathname = request.nextUrl.pathname;
   const publicRoutes = ["/", "/login", "/logout", "/auth", "/api", "/preise", "/kundenbereich", "/kontakt", "/faq", "/agb", "/impressum", "/datenschutz", "/cookies"];
   const isPublicRoute = publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
@@ -51,21 +56,25 @@ export async function updateSession(request: NextRequest) {
   const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
 
   if (user && isProtected) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("plan, trial_end")
-      .single();
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plan, trial_end")
+        .single();
 
-    const hasActivePlan = profile && (
-      (profile.plan === "trial" && profile.trial_end && new Date(profile.trial_end) > new Date())
-      || ["starter", "growth", "studio"].includes(profile.plan ?? "")
-    );
+      const hasActivePlan = profile && (
+        (profile.plan === "trial" && profile.trial_end && new Date(profile.trial_end) > new Date())
+        || ["starter", "growth", "studio"].includes(profile.plan ?? "")
+      );
 
-    if (!hasActivePlan) {
-      const preiseUrl = request.nextUrl.clone();
-      preiseUrl.pathname = "/preise";
-      preiseUrl.search = "";
-      return NextResponse.redirect(preiseUrl);
+      if (!hasActivePlan) {
+        const preiseUrl = request.nextUrl.clone();
+        preiseUrl.pathname = "/preise";
+        preiseUrl.search = "";
+        return NextResponse.redirect(preiseUrl);
+      }
+    } catch {
+      // Profile query failed – allow through
     }
   }
 
