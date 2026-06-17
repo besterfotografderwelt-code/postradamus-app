@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
 
 type NavMenuProps = {
-  menu: Array<{ href: string; label: string; primary?: boolean; action?: "signOut" }>;
+  links: Array<{ href: string; label: string; primary?: boolean }>;
 };
 
-export function NavMenu({ menu }: NavMenuProps) {
+export function NavMenu({ links }: NavMenuProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -28,20 +28,16 @@ export function NavMenu({ menu }: NavMenuProps) {
 
       <nav className={`nav ${open ? "nav-open" : ""}`} aria-label="Hauptnavigation">
         <Link className="nav-home" href="/" onClick={() => setOpen(false)}>Home</Link>
-        {menu.map((item) =>
-          item.action === "signOut" ? (
-            <Link key="signout" href="/logout" className="nav-button" onClick={() => setOpen(false)} style={{ color: "var(--error, #d32f2f)" }}>Abmelden</Link>
-          ) : (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={item.primary ? "nav-primary" : ""}
-              onClick={() => setOpen(false)}
-            >
-              {item.label}
-            </Link>
-          )
-        )}
+        {links.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={item.primary ? "nav-primary" : ""}
+            onClick={() => setOpen(false)}
+          >
+            {item.label}
+          </Link>
+        ))}
       </nav>
     </>
   );

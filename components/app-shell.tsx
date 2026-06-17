@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { signOut } from "@/app/auth/actions";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { NavMenu } from "@/components/nav-menu";
@@ -15,20 +16,15 @@ export async function AppShell({ children }: AppShellProps) {
     ? (await (await createClient()).auth.getUser()).data.user
     : null;
 
-  const menu: Array<{ href: string; label: string; primary?: boolean; action?: "signOut" }> = [
+  const navLinks: Array<{ href: string; label: string; primary?: boolean }> = [
     { href: "/", label: "Start" },
     { href: "/preise", label: "Preise" },
     { href: "/kundenbereich", label: "Kundenbereich" },
     { href: "/faq", label: "FAQ" },
     { href: "/kontakt", label: "Kontakt" },
-    ...(!configured ? [{ href: "/login", label: "Login", primary: true }] : []),
-    ...(configured && user
-      ? [
-          { href: "/projects/new", label: "Neu", primary: true },
-          { href: "#", label: "Abmelden", action: "signOut" as const },
-        ]
-      : configured
-      ? [{ href: "/login", label: "Login", primary: true }]
+    ...(user ? [] : [{ href: "/login", label: "Login", primary: true }]),
+    ...(user
+      ? [{ href: "/projects/new", label: "Neu", primary: true }]
       : []),
   ];
 
@@ -39,7 +35,12 @@ export async function AppShell({ children }: AppShellProps) {
           <Image className="brand-logo" src="/brand/postradamus-mark.png" alt="" width={219} height={256} aria-hidden="true" />
           <strong>Postradamus</strong>
         </Link>
-        <NavMenu menu={menu} />
+        <NavMenu links={navLinks} />
+        {user && (
+          <form action={signOut} className="signout-form">
+            <button className="nav-button" type="submit">Abmelden</button>
+          </form>
+        )}
       </header>
 
       <main>{children}</main>
