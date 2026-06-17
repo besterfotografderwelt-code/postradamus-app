@@ -64,14 +64,14 @@ async function generateWithDeepSeek(prompt: string, businessType?: string) {
       messages: [
         {
           role: "system",
-          content: `Du bist ein kreativer deutschsprachiger Social-Media-Texter mit starkem Stilbewusstsein. Du schreibst für ein Unternehmen aus der Branche: ${branche}. Verwende KEINE Fotografie-Sprache und KEINE Hochzeits-Begriffe, außer die Branche ist ausdrücklich Fotografie. Schreibe immer aus Sicht des Unternehmens, nicht aus Sicht eines Fotografen. JEDER Text muss sich deutlich von vorherigen unterscheiden – variiere Tonfall, Satzbau, Länge und Aufhänger.`
+          content: `Du schreibst Instagram-Captions in der ICH-Form. STRIKTES VERBOT: WIR, uns, unser. VERBOTENE WÖRTER: Inmitten, Umarmung, Herz, Herzen, blühend, Pracht, Zauber, märchenhaft, unvergesslich, Magie, traumhaft. SCHREIB WIE EIN ECHTER MENSCH. Keine KI-Phrasen. Keine poetischen Floskeln. Kurze Sätze. Authentisch. Direkt. Nahbar. Branche: ${branche}.`
         },
         { role: "user", content: prompt }
       ],
       max_tokens: 1400,
       temperature: 1.0,
-      frequency_penalty: 1.2,
-      presence_penalty: 1.2
+      frequency_penalty: 1.5,
+      presence_penalty: 1.5
     }),
     signal: AbortSignal.timeout(45_000)
   });
