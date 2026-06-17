@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { createClient } from "@/lib/supabase/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "");
 
@@ -11,12 +12,20 @@ const PLAN_PRICES: Record<string, { name: string; price: number }> = {
 };
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) {
+    return NextResponse.json({ error: "Nicht eingeloggt" }, { status: 401 });
+  }
+
   const { plan, returnUrl, cancelUrl } = await request.json();
   const planDef = PLAN_PRICES[plan] ?? PLAN_PRICES.starter;
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      client_reference_id: auth.user.id,
+      metadata: { plan: planDef.name.toLowerCase(), userId: auth.user.id },
       line_items: [
         {
           price_data: {

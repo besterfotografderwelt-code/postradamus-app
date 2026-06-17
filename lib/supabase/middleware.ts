@@ -74,7 +74,10 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(preiseUrl);
       }
     } catch {
-      // Profile query failed – allow through
+      // Profile query failed – block access to be safe
+      const preiseUrl = request.nextUrl.clone();
+      preiseUrl.pathname = "/preise";
+      return NextResponse.redirect(preiseUrl);
     }
   }
 
