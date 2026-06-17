@@ -23,7 +23,7 @@ export async function AppShell({ children }: AppShellProps) {
     { href: "/kontakt", label: "Kontakt" },
     ...(user ? [] : [{ href: "/login", label: "Login", primary: true }]),
     ...(user
-      ? [{ href: "/projects/new", label: "Neu", primary: true }]
+      ? [{ href: "/projects", label: "Projekte", primary: true }]
       : []),
   ];
 
