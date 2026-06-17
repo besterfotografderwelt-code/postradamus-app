@@ -706,13 +706,26 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
     let cancelled = false;
     
     async function generate() {
-      const hooks = ["Stell eine Frage", "Mach ein starkes Statement", "Schreib eine Beobachtung", "Starte mit Du", "Erzähl eine Mini-Story", "Formuliere einen CTA", "Überrasche mit einem Vergleich", "Ein-Wort-Einstieg"];
+      const hooks = [
+        "Stell eine persönliche Frage an den Leser",
+        "Mach ein starkes Statement in der Ich-Form",
+        "Schreib eine Beobachtung aus der Ich-Perspektive",
+        "Starte mit einem kurzen kraftvollen Satz",
+        "Erzähl eine Mini-Story aus Deiner Sicht",
+        "Formuliere einen CTA mit klarer Handlungsaufforderung",
+        "Überrasche mit einem unerwarteten Vergleich",
+        "Starte mit EINEM Wort, dann erkläre",
+        "Schreib aus einer Emotion heraus (Stolz, Freude, Dankbarkeit)",
+        "Starte mit Zahlen oder Fakten zum Projekt",
+        "Fang mit einem Zitat an (erfunden, Deine Perspektive)",
+        "Starte mit 'Das Beste daran:'",
+      ];
       
       for (let i = 0; i < validSlots.length; i++) {
         if (cancelled) return;
         const slot = validSlots[i];
         const img = slot.images[0];
-        const hookInstruction = hooks[i % hooks.length];
+        const hook = hooks[Math.floor(Math.random() * hooks.length)];
         
         try {
           const res = await fetch("/api/generate", {
@@ -721,10 +734,10 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
             body: JSON.stringify({
               type: "instagram_caption",
               context: {
-                project: { couple_name: img?.name ?? "Projekt", businessType, businessLabel: businessType },
+                project: { id: img?.id ?? "unknown", couple_name: img?.name ?? "Projekt", businessType },
                 favoriteCount: 1,
                 tags: img?.tags ?? [],
-                extraInstructions: `${tone || "natürlich"}. WICHTIG: ${hookInstruction}. Verwende KEINEN dieser Satzanfänge: Inmitten, Ein Tag, Es war, Man nehme.`,
+                extraInstructions: `Tonalität: ${tone || "natürlich"}. Schreibe IMMER in der ICH-Form (nicht WIR). ${hook}. Keine Floskeln wie "Inmitten von" oder "Ein Tag voller".`,
                 styleProfile: styleProfile || undefined,
               },
             }),
