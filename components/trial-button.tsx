@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function TrialButton({ plan }: { plan: string }) {
+export function TrialButton({ plan: _plan }: { plan: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 

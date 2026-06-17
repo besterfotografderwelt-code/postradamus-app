@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 const IG_CREDS_KEY = "weddin…m.v1";
 const INSTAGRAM_CLIENT_ID = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID;
@@ -50,6 +51,17 @@ export function KundenbereichDashboard() {
   const [igConfig, setIgConfig] = useState({ accessToken: "", accountId: "", username: "" });
   const [igTesting, setIgTesting] = useState(false);
   const [igTestResult, setIgTestResult] = useState("");
+
+  /* Projects */
+  const [projects, setProjects] = useState<Array<{ id: string; couple_name: string | null; business_type: string; location: string | null; uploaded_image_count: number; status: string }>>([]);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/projects")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => { setProjects(data?.projects ?? []); setProjectsLoaded(true); })
+      .catch(() => setProjectsLoaded(true));
+  }, []);
 
   useEffect(() => {
     try {
@@ -188,6 +200,34 @@ export function KundenbereichDashboard() {
       {/* ── Header ── */}
       <div className="eyebrow">Kundenbereich</div>
       <h1>Hallo, {DEMO_USER.name.split(" ")[0]} 👋</h1>
+
+      {/* ── Projekte ── */}
+      {projectsLoaded && projects.length > 0 && (
+        <section className="kunden-section">
+          <h2>Deine Projekte</h2>
+          <div className="project-list">
+            {projects.slice(0, 5).map((p) => (
+              <Link key={p.id} className="project-list-item" href={`/projects/${p.id}`}>
+                <div>
+                  <strong>{p.couple_name || p.business_type || "Unbenannt"}</strong>
+                  <span className="kunden-meta">{p.location || `${p.uploaded_image_count} Bilder`}</span>
+                </div>
+                <span className="project-status-badge">{p.status === "brief" ? "Neu" : p.status === "selection" ? "Bilder" : p.status}</span>
+              </Link>
+            ))}
+          </div>
+          <Link className="button-secondary" href="/projects" style={{ marginTop: 12, display: "inline-flex" }}>
+            {projects.length > 5 ? `Alle ${projects.length} Projekte →` : "Zum Projekt-Dashboard →"}
+          </Link>
+        </section>
+      )}
+      {projectsLoaded && projects.length === 0 && (
+        <section className="kunden-section">
+          <h2>Deine Projekte</h2>
+          <p className="kunden-section-desc">Noch keine Projekte. Leg gleich dein erstes an.</p>
+          <Link className="button" href="/projects/new">Neues Projekt starten</Link>
+        </section>
+      )}
 
       {/* ── Account Card ── */}
       <div className="kunden-card">
