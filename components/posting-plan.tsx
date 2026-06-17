@@ -752,6 +752,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
               brandName: "",
               slotIndex: i,
               previousOpenings: generatedOpenings,
+              styleProfile: ob || undefined,
             }),
           });
           const data = await res.json();

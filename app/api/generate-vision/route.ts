@@ -200,7 +200,7 @@ function parseJSON(raw: string): Record<string, unknown> {
 export async function POST(request: Request) {
   if (!OPENAI_KEY) return NextResponse.json({ error: "Kein OpenAI-Key" }, { status: 500 });
 
-  const { imageBase64, businessType, brandName, slotIndex, previousOpenings, blockedTerms } = await request.json();
+  const { imageBase64, businessType, brandName, slotIndex, previousOpenings, blockedTerms, styleProfile } = await request.json();
   if (!imageBase64) return NextResponse.json({ error: "Kein Bild" }, { status: 400 });
 
   const narrator = buildNarratorProfile(businessType, brandName);
@@ -226,10 +226,10 @@ export async function POST(request: Request) {
 
     // ── Step 2: Caption ──
     const perspectiveRule = narrator.narratorType === "person_in_image"
-      ? "Du schreibst aus Sicht der sichtbaren Person (nur erlaubt weil narratorType=person_in_image)."
+      ? "Sichtbare Person = Erzähler. SCHREIBE ALS DIESE PERSON IN ICH-FORM."
       : narrator.allowedPerspective === "i"
-        ? `Schreibe aus ICH-Perspektive. "Ich" = ${narrator.narratorLabel}. ${narrator.description}`
-        : `Schreibe aus WIR-Perspektive. "Wir" = ${narrator.narratorLabel}. ${narrator.description}`;
+        ? `SCHREIBE IN ICH-FORM. "Ich" = ${narrator.narratorLabel}. ${narrator.description}. NIE "wir". NIE als Person im Bild.`
+        : `SCHREIBE IN WIR-FORM. "Wir" = ${narrator.narratorLabel}. ${narrator.description}. NIE "ich" als Person im Bild.`;
 
     const cRes = await callOpenAI("caption", [
       {
@@ -238,10 +238,11 @@ export async function POST(request: Request) {
           `Du schreibst Instagram-Captions für verschiedene Branchen.`,
           `NARRATOR: ${JSON.stringify(narrator)}`,
           `REGEL: ${perspectiveRule}`,
+          styleProfile ? `STIL: ${styleProfile}` : "",
           `Die Person oder das Objekt im Bild ist NICHT automatisch der Erzähler.`,
           `Nur wenn narratorType="person_in_image" darf die sichtbare Person selbst sprechen.`,
           `Natürlich, konkret, direkt. Kein Kitsch. Keine Bildbeschreibung.`,
-        ].join(" "),
+        ].filter(Boolean).join(" "),
       },
       {
         role: "user",
@@ -249,6 +250,7 @@ export async function POST(request: Request) {
           `Schreibe eine Instagram-Caption (80-120 Wörter + 8-10 Hashtags).`,
           `NARRATOR: ${JSON.stringify(narrator)}`,
           `PERSPEKTIVE: ${perspectiveRule}`,
+          styleProfile ? `STIL: ${styleProfile}` : "",
           `ANALYSE: ${JSON.stringify(analysis)}`,
           `STRATEGIE: ${strategy.desc}`,
           prevList.length ? `VERMEIDE Satzanfänge: ${prevList.join(" | ")}` : "",
