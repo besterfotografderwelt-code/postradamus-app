@@ -699,25 +699,44 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
 
-  // Auto-generate KI-Captions when slots or tone change
+  // Auto-generate KI-Captions when slots or tone change – individual calls for max variety
   useEffect(() => {
     const validSlots = filteredSlots.filter((s) => s.type !== "story" && s.type !== "reel");
     if (validSlots.length === 0 || !images.length) return;
     let cancelled = false;
+    
     async function generate() {
-      try {
-        const res = await fetch("/api/generate/batch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ images: images.slice(0, 30), project: { couple_name: images[0]?.name ?? "Projekt", businessName: businessType }, tone, businessType, styleProfile }),
-        });
-        const data = await res.json();
-        if (cancelled || !data.captions?.length) return;
-        const updated: Record<string, string> = {};
-        validSlots.forEach((slot, i) => { if (data.captions[i]) updated[slot.id] = data.captions[i]; });
-        setEditedCaptions((prev) => ({ ...prev, ...updated }));
-      } catch { /* ignore */ }
+      const hooks = ["Stell eine Frage", "Mach ein starkes Statement", "Schreib eine Beobachtung", "Starte mit Du", "Erzähl eine Mini-Story", "Formuliere einen CTA", "Überrasche mit einem Vergleich", "Ein-Wort-Einstieg"];
+      
+      for (let i = 0; i < validSlots.length; i++) {
+        if (cancelled) return;
+        const slot = validSlots[i];
+        const img = slot.images[0];
+        const hookInstruction = hooks[i % hooks.length];
+        
+        try {
+          const res = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "instagram_caption",
+              context: {
+                project: { couple_name: img?.name ?? "Projekt", businessType, businessLabel: businessType },
+                favoriteCount: 1,
+                tags: img?.tags ?? [],
+                extraInstructions: `${tone || "natürlich"}. WICHTIG: ${hookInstruction}. Verwende KEINEN dieser Satzanfänge: Inmitten, Ein Tag, Es war, Man nehme.`,
+                styleProfile: styleProfile || undefined,
+              },
+            }),
+          });
+          const data = await res.json();
+          if (!cancelled && data.content) {
+            setEditedCaptions((prev) => ({ ...prev, [slot.id]: data.content }));
+          }
+        } catch { /* skip this slot */ }
+      }
     }
+    
     generate();
     return () => { cancelled = true; };
   }, [filteredSlots, tone, businessType, styleProfile, images]);
