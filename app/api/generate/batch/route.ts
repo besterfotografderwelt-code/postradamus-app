@@ -78,6 +78,8 @@ export async function POST(request: Request) {
           ],
           max_tokens: Math.min(5000, count * 500),
           temperature: 0.9,
+          frequency_penalty: 1.0,
+          presence_penalty: 1.0,
         }),
         signal: AbortSignal.timeout(90_000),
       }
