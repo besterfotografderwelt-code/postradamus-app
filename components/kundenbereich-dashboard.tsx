@@ -56,7 +56,8 @@ export function KundenbereichDashboard() {
   const [projects, setProjects] = useState<Array<{ id: string; couple_name: string | null; business_type: string; location: string | null; uploaded_image_count: number; status: string }>>([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
 
-  useEffect(() => {
+  /* Auth check */
+  const [authed, setAuthed] = useState<boolean | null>(null);
     fetch("/api/projects")
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => { setProjects(data?.projects ?? []); setProjectsLoaded(true); })
@@ -191,6 +192,51 @@ export function KundenbereichDashboard() {
             ← Zurück zum Login
           </button>
         </div>
+      </section>
+    );
+  }
+
+  if (authed === false) {
+    return (
+      <section className="content-page" style={{ paddingBottom: 60 }}>
+        <div className="eyebrow">Kundenbereich</div>
+        <h1>Dein Cockpit wartet auf dich.</h1>
+        <p className="lead">
+          Melde dich an, um deine Projekte, Rechnungen und Einstellungen zu sehen.
+        </p>
+
+        <div className="content-actions">
+          <Link className="button" href="/login">Anmelden</Link>
+          <Link className="button-secondary" href="/preise">Preise ansehen</Link>
+        </div>
+
+        <div className="kunden-teaser">
+          <h2>14 Tage kostenlos – alle Features</h2>
+          <div className="kunden-teaser-grid">
+            {[
+              { title: "KI-Captions", desc: "Passend zu deinen Bildern generiert" },
+              { title: "Postingplan", desc: "Woche für Woche automatisch" },
+              { title: "Instagram", desc: "Direkt veröffentlichen mit einem Klick" },
+            ].map((f) => (
+              <article key={f.title}>
+                <strong>{f.title}</strong>
+                <span>{f.desc}</span>
+              </article>
+            ))}
+          </div>
+          <Link className="button" href="/login?trial=14" style={{ marginTop: 20, display: "inline-flex" }}>
+            14 Tage gratis starten
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  if (authed === null) {
+    return (
+      <section className="content-page">
+        <div className="eyebrow">Kundenbereich</div>
+        <h1>Einen Moment …</h1>
       </section>
     );
   }

@@ -1204,10 +1204,46 @@ h3 { font-size: 1.15rem; }
   max-width: 500px;
 }
 
+.kunden-teaser {
+  margin-top: 44px;
+  padding: 36px;
+  border: 1px solid rgba(0,113,227,.12);
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(0,113,227,.03), rgba(0,113,227,.01));
+  text-align: center;
+}
+.kunden-teaser h2 {
+  margin: 0 0 24px;
+  font-size: 1.4rem;
+}
+.kunden-teaser-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.kunden-teaser-grid article {
+  padding: 20px 16px;
+  border: 1px solid rgba(0,0,0,.05);
+  border-radius: 18px;
+  background: #fff;
+}
+.kunden-teaser-grid strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+.kunden-teaser-grid span {
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.4;
+}
+
 @media (max-width: 700px) {
   .plan-switch-grid {
     grid-template-columns: 1fr;
   }
+  .kunden-teaser-grid { grid-template-columns: 1fr; }
   .invoice-row {
     grid-template-columns: 1fr 1fr;
     gap: 4px 12px;
