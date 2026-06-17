@@ -699,57 +699,31 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
 
-  // Auto-generate KI-Captions when slots or tone change – individual calls for max variety
+  // Auto-generate KI-Captions via Batch mit Radikal-Varietät
   useEffect(() => {
     const validSlots = filteredSlots.filter((s) => s.type !== "story" && s.type !== "reel");
     if (validSlots.length === 0 || !images.length) return;
     let cancelled = false;
-    
     async function generate() {
-      const hooks = [
-        "Stell eine persönliche Frage an den Leser",
-        "Mach ein starkes Statement in der Ich-Form",
-        "Schreib eine Beobachtung aus der Ich-Perspektive",
-        "Starte mit einem kurzen kraftvollen Satz",
-        "Erzähl eine Mini-Story aus Deiner Sicht",
-        "Formuliere einen CTA mit klarer Handlungsaufforderung",
-        "Überrasche mit einem unerwarteten Vergleich",
-        "Starte mit EINEM Wort, dann erkläre",
-        "Schreib aus einer Emotion heraus (Stolz, Freude, Dankbarkeit)",
-        "Starte mit Zahlen oder Fakten zum Projekt",
-        "Fang mit einem Zitat an (erfunden, Deine Perspektive)",
-        "Starte mit 'Das Beste daran:'",
-      ];
-      
-      for (let i = 0; i < validSlots.length; i++) {
-        if (cancelled) return;
-        const slot = validSlots[i];
-        const img = slot.images[0];
-        const hook = hooks[Math.floor(Math.random() * hooks.length)];
-        
-        try {
-          const res = await fetch("/api/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: "instagram_caption",
-              context: {
-                project: { id: img?.id ?? "unknown", couple_name: img?.name ?? "Projekt", businessType },
-                favoriteCount: 1,
-                tags: img?.tags ?? [],
-                extraInstructions: `Tonalität: ${tone || "natürlich"}. Schreibe IMMER in der ICH-Form (nicht WIR). ${hook}. Keine Floskeln wie "Inmitten von" oder "Ein Tag voller".`,
-                styleProfile: styleProfile || undefined,
-              },
-            }),
-          });
-          const data = await res.json();
-          if (!cancelled && data.content) {
-            setEditedCaptions((prev) => ({ ...prev, [slot.id]: data.content }));
-          }
-        } catch { /* skip this slot */ }
-      }
+      try {
+        const res = await fetch("/api/generate/batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            images: images.slice(0, 30),
+            project: { couple_name: images[0]?.name ?? "Projekt", businessName: businessType },
+            tone,
+            businessType,
+            styleProfile,
+          }),
+        });
+        const data = await res.json();
+        if (cancelled || !data.captions?.length) return;
+        const updated: Record<string, string> = {};
+        validSlots.forEach((slot, i) => { if (data.captions[i]) updated[slot.id] = data.captions[i]; });
+        setEditedCaptions((prev) => ({ ...prev, ...updated }));
+      } catch { /* ignore */ }
     }
-    
     generate();
     return () => { cancelled = true; };
   }, [filteredSlots, tone, businessType, styleProfile, images]);

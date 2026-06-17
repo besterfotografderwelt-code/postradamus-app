@@ -18,6 +18,7 @@ const businessLabels: Record<string, string> = {
 export async function POST(request: Request) {
   const { images, project, tone, businessType, styleProfile } = await request.json();
   const businessLabel = businessLabels[businessType] ?? "ein Unternehmen";
+  const count = Math.min((images || []).length, 30);
 
   const imageList = (images || [])
     .map((img: { filename?: string; tags?: string[] }, i: number) =>
@@ -25,33 +26,51 @@ export async function POST(request: Request) {
     )
     .join("\n");
 
-  const count = Math.min((images || []).length, 30);
+  const styList = [
+    "Sachlich & informierend",
+    "Emotional & nahbar",
+    "Humorvoll & leicht",
+    "Dramatisch & kraftvoll",
+    "Minimalistisch & clean",
+    "Fragend & neugierig",
+    "Storytelling & bildhaft",
+    "Direkt & ehrlich",
+    "Poetisch & atmosphärisch",
+    "Motivierend & aufbauend",
+  ];
+
+  const styleAssignments = Array.from({ length: count }, (_, i) => styList[i % styList.length]);
+
   const prompt = [
-    `Du schreibst ${count} Instagram-Captions für ${businessLabel}.`,
-    `Projekt: ${project?.couple_name || project?.businessName || "Kundenprojekt"}.`,
-    `Tonalität: ${tone || "natürlich"}.`,
-    `Bildinformationen:\n${imageList}`,
+    `DU BIST ${count} VERSCHIEDENE PERSONEN. Jede Person hat einen EIGENEN Schreibstil.`,
+    `Branche: ${businessLabel}. Projekt: ${project?.couple_name || project?.businessName || "Kundenprojekt"}.`,
+    `Grundtonalität: ${tone || "natürlich"}.`,
     ``,
-    'ERSTELLE JETZT GENAU ' + count + ' CAPTIONS. KRITISCHE REGELN:',
-    'JEDE Caption MUSS ANDERS BEGINNEN als alle anderen. KEINE WIEDERHOLUNG. Jeder Einstieg ein völlig neuer Gedanke.',
-    'Verwende ALLE diese Einstiegsarten GENAU EINMAL, dann erfinde komplett neue:',
-    'Frage, Statement, Beobachtung, Detail-Aufzählung, Du-Ansprache, Mini-Story, CTA, Vergleich, Überraschung, Szene, rhetorische Frage, Pro-Tipp, Zitat, Gefühls-Erinnerung, Ein-Wort-Einstieg, Zukunftsausblick, Widerspruch, Understatement, Humor, Dringlichkeit.',
-    'JEDE ZWEITE Caption braucht einen CTA (z.B. \'Jetzt entdecken\', \'Was denkst du?\', \'Probiers aus\').',
-    'Jede Caption: 80-120 Wörter + 8-10 Hashtags.',
-    'VERBOTENE Wörter am Satzanfang: Inmitten, Ein, Es, Man, Das, Die, Der.',
-    'Satzlängen maximal durchmischen: 2 Wörter, dann 22. Kein Muster.',
-    'Jede Caption fühlt sich an wie von einer ANDEREN Person geschrieben.',
-    'Format: "Caption 1:" dann Text, "Caption 2:" dann Text, usw.',
-    ...(styleProfile ? [`Stil: ${styleProfile}`] : []),
+    `JEDE Person schreibt GENAU EINE Instagram-Caption (80-120 Wörter + 8-10 Hashtags).`,
+    `Die Personen und ihre Stile:`,
+    ...styleAssignments.map((s, i) => `Person ${i + 1}: ${s}.`),
+    ``,
+    `BILDINFORMATIONEN:\n${imageList}`,
+    ``,
+    `KRITISCHE REGELN – Bei Verstoß sind ALLE Captions ungültig:`,
+    `1. Jede Person schreibt KOMPLETT ANDERS. Wenn zwei Captions ähnlich klingen = FEHLER.`,
+    `2. KEINE Person verwendet Wörter oder Satzanfänge einer anderen Person.`,
+    `3. IMMER in ICH-Form schreiben (ich, mein, mir). NIE "wir" oder "uns".`,
+    `4. VERBOTENE Anfänge: "Inmitten", "Ein Tag", "Wenn", "Es ist", "Man".`,
+    `5. Jede Caption MUSS anders anfangen – Frage, Ausruf, Statement, Beobachtung, Zahl, Zitat…`,
+    `6. Jeder Text klingt, als hätte ihn ein ECHTER Mensch geschrieben, keine KI.`,
+    ...(styleProfile ? [`7. Zusätzlicher Stil des Accounts: ${styleProfile}`] : []),
+    ``,
+    `AUSGABE-FORMAT:`,
+    `Caption 1: [Text Person 1]`,
+    `Caption 2: [Text Person 2]`,
+    `usw.`,
   ].join("\n");
 
   const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "Kein API-Key" }, { status: 500 });
-  }
+  if (!apiKey) return NextResponse.json({ error: "Kein API-Key" }, { status: 500 });
 
   const isDeepseek = !process.env.OPENAI_API_KEY;
-  const maxTokens = Math.min(4000, count * 400);
 
   try {
     const res = await fetch(
@@ -60,23 +79,20 @@ export async function POST(request: Request) {
         : "https://api.openai.com/v1/chat/completions",
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: isDeepseek ? (process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash") : (process.env.OPENAI_MODEL ?? "gpt-5.4-mini"),
           messages: [
             {
               role: "system",
-              content: `Du bist ein kreativer deutscher Social-Media-Texter. Deine Spezialität: JEDE einzelne Caption ist ein Unikat. Niemals zwei ähnliche Texte. Du schreibst für: ${businessLabel}.`
+              content: `Du simulierst ${count} verschiedene Personen. Jede hat einen eigenen Schreibstil. Du schreibst IMMER in der ICH-Form. Jeder Text ist einzigartig. Branche: ${businessLabel}.`
             },
             { role: "user", content: prompt },
           ],
-          max_tokens: maxTokens,
-          temperature: 1.2,
+          max_tokens: Math.min(5000, count * 500),
+          temperature: 1.3,
         }),
-        signal: AbortSignal.timeout(60_000),
+        signal: AbortSignal.timeout(90_000),
       }
     );
 
@@ -84,8 +100,6 @@ export async function POST(request: Request) {
     if (!res.ok) throw new Error(payload?.error?.message ?? "API-Fehler");
 
     const raw = payload.choices?.[0]?.message?.content ?? "";
-
-    // Parse captions from "Caption N: ..." format
     const captions: string[] = [];
     const parts = raw.split(/Caption \d+:/i);
     for (const part of parts) {
