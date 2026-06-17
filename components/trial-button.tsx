@@ -9,7 +9,7 @@ export function TrialButton() {
     setLoading(true);
     try {
       const origin = window.location.origin;
-      const res = await fetch("/api/paypal/create", {
+      const res = await fetch("/api/stripe/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -19,8 +19,8 @@ export function TrialButton() {
         }),
       });
       const data = await res.json();
-      if (data.approvalUrl) {
-        window.location.href = data.approvalUrl;
+      if (data.url) {
+        window.location.href = data.url;
       } else if (res.status === 401) {
         window.location.href = "/login?next=/preise";
       } else {
