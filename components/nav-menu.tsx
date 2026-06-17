@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type NavMenuProps = {
@@ -9,6 +10,13 @@ type NavMenuProps = {
 
 export function NavMenu({ menu }: NavMenuProps) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  async function handleSignOut() {
+    await fetch("/api/signout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <>
@@ -30,7 +38,7 @@ export function NavMenu({ menu }: NavMenuProps) {
         <Link className="nav-home" href="/" onClick={() => setOpen(false)}>Home</Link>
         {menu.map((item) =>
           item.action === "signOut" ? (
-            <a key="signout" href="/api/signout" className="nav-button">Abmelden</a>
+            <button key="signout" className="nav-button" type="button" onClick={handleSignOut}>Abmelden</button>
           ) : (
             <Link
               key={item.href}
