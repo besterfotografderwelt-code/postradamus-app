@@ -54,7 +54,8 @@ export function KundenbereichDashboard() {
 
   /* Projects */
   const [projects, setProjects] = useState<Array<{ id: string; couple_name: string | null; business_type: string; location: string | null; uploaded_image_count: number; status: string }>>([]);
-  const [projectsLoaded, setProjectsLoaded] = useState(false);
+  const [profile, setProfile] = useState<{ full_name: string; plan: string; trial_start: string | null; trial_end: string | null } | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   /* Auth check */
   const [authed, setAuthed] = useState<boolean | null>(false);
@@ -62,20 +63,17 @@ export function KundenbereichDashboard() {
   useEffect(() => {
     fetch("/api/projects")
       .then((r) => {
-        if (!r.ok) {
-          setAuthed(false);
-          setProjectsLoaded(true);
-          return null;
-        }
+        if (!r.ok) { setAuthed(false); setLoaded(true); return null; }
         return r.json();
       })
       .then((data) => {
-        if (data === null) return; // Not authenticated
+        if (data === null) return;
         setProjects(data?.projects ?? []);
+        setProfile(data?.profile ?? null);
         setAuthed(true);
-        setProjectsLoaded(true);
+        setLoaded(true);
       })
-      .catch(() => { setAuthed(false); setProjectsLoaded(true); });
+      .catch(() => { setAuthed(false); setLoaded(true); });
   }, []);
 
   useEffect(() => {
@@ -251,7 +249,7 @@ export function KundenbereichDashboard() {
     <section className="content-page" style={{ paddingBottom: 60 }}>
       {/* ── Header ── */}
       <div className="eyebrow">Kundenbereich</div>
-      <h1>Hallo, {DEMO_USER.name.split(" ")[0]} 👋</h1>
+      <h1>Hallo, {profile?.full_name?.split(" ")[0] || "Kunde"} 👋</h1>
 
       {/* ── Projekte ── */}
       {projectsLoaded && projects.length > 0 && (
@@ -286,8 +284,12 @@ export function KundenbereichDashboard() {
         <div className="kunden-card-main">
           <div>
             <span className="kunden-meta">Aktuelles Paket</span>
-            <strong className="kunden-plan">{DEMO_USER.plan}</strong>
-            <span className="kunden-meta">{DEMO_USER.planPrice} / Monat</span>
+            <strong className="kunden-plan">{profile?.plan === "trial" && profile?.trial_end && new Date(profile.trial_end) > new Date() ? "14-Tage-Trial" : profile?.plan || "-"}</strong>
+            <span className="kunden-meta">
+              {profile?.trial_end && new Date(profile.trial_end) > new Date()
+                ? `Trial bis ${new Date(profile.trial_end).toLocaleDateString("de")}`
+                : "Aktives Paket"}
+            </span>
           </div>
           <div className="kunden-quota">
             <div className="kunden-quota-bar">
