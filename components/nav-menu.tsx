@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type NavMenuProps = {
@@ -10,12 +9,14 @@ type NavMenuProps = {
 
 export function NavMenu({ menu }: NavMenuProps) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
 
   async function handleSignOut() {
-    await fetch("/api/signout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    // Client-only signout: clear everything and redirect
+    try { await fetch("/api/signout", { method: "POST" }); } catch { /* ignore */ }
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+    });
+    window.location.href = "/login";
   }
 
   return (
