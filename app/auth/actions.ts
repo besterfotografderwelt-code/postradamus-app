@@ -30,7 +30,23 @@ export async function signIn(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) loginRedirect(error.message);
-  redirect("/");
+
+  // Check if user has any active plan; if not, send to pricing
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, trial_end")
+    .single();
+
+  const hasActivePlan = profile && (
+    profile.plan === "trial" && profile.trial_end && new Date(profile.trial_end) > new Date()
+    || ["starter", "growth", "studio"].includes(profile.plan ?? "")
+  );
+
+  if (!hasActivePlan) {
+    redirect("/preise");
+  }
+
+  redirect("/projects");
 }
 
 export async function signUp(formData: FormData) {

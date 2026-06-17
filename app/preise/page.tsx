@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { TrialButton } from "@/components/trial-button";
 
 export const metadata: Metadata = {
   title: "Preise – Postradamus",
@@ -97,9 +98,7 @@ export default function PreisePage() {
                   <li key={item}>{item}</li>
                 ))}
               </ul>
-              <Link className="button pricing-button" href={plan.href}>
-                14 Tage gratis testen
-              </Link>
+              <TrialButton plan={plan.name.toLowerCase()} />
             </article>
           ))}
         </div>
@@ -131,9 +130,7 @@ export default function PreisePage() {
           Starte kostenlos und prüfe in einem echten Projekt, wie schnell aus
           Bildern fertige Posts werden.
         </p>
-        <Link className="button" href="/login?trial=14">
-          14 Tage gratis testen
-        </Link>
+        <TrialButton plan="starter" />
       </section>
     </div>
   );

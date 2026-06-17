@@ -9,3 +9,4 @@ test-results/
 .env
 *.tsbuildinfo
 data/instagram-token.json
+.vercel

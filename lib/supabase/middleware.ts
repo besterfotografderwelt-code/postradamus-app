@@ -46,5 +46,28 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse;
   }
 
+  // Check trial/plan for protected routes
+  const protectedRoutes = ["/projects", "/settings", "/onboarding"];
+  const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
+
+  if (user && isProtected) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan, trial_end")
+      .single();
+
+    const hasActivePlan = profile && (
+      (profile.plan === "trial" && profile.trial_end && new Date(profile.trial_end) > new Date())
+      || ["starter", "growth", "studio"].includes(profile.plan ?? "")
+    );
+
+    if (!hasActivePlan) {
+      const preiseUrl = request.nextUrl.clone();
+      preiseUrl.pathname = "/preise";
+      preiseUrl.search = "";
+      return NextResponse.redirect(preiseUrl);
+    }
+  }
+
   return response;
 }
