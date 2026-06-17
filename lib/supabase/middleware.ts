@@ -23,7 +23,7 @@ export async function updateSession(request: NextRequest) {
     }
   });
 
-  let user: any = null;
+  let user: Database["public"]["Tables"]["profiles"]["Row"] | null = null;
   try {
     const result = await supabase.auth.getUser();
     user = result.data?.user ?? null;

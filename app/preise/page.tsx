@@ -99,7 +99,7 @@ export default function PreisePage() {
                   <li key={item}>{item}</li>
                 ))}
               </ul>
-              <TrialButton plan={plan.name.toLowerCase()} />
+              <TrialButton />
               <PayPalButton plan={plan.name.toLowerCase()} label="Direkt abonnieren" />
             </article>
           ))}
@@ -132,7 +132,7 @@ export default function PreisePage() {
           Starte kostenlos und prüfe in einem echten Projekt, wie schnell aus
           Bildern fertige Posts werden.
         </p>
-        <TrialButton plan="starter" />
+        <TrialButton />
       </section>
     </div>
   );
