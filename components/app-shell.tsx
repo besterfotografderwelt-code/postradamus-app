@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { signOut } from "@/app/auth/actions";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { NavMenu } from "@/components/nav-menu";
@@ -37,7 +36,7 @@ export async function AppShell({ children }: AppShellProps) {
         </Link>
         <NavMenu links={navLinks} />
         {user && (
-          <form action={signOut} className="signout-form">
+          <form action="/api/signout" method="get">
             <button className="nav-button" type="submit">Abmelden</button>
           </form>
         )}
