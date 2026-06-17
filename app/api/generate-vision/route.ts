@@ -24,13 +24,13 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "system",
-            content: `Du schreibst Instagram-Captions basierend auf Bildern die du siehst. Gib direkt die Caption aus – KEINE Einleitung, KEINE Beschreibung, KEIN "Auf dem Bild sieht man". ICH-Form. Authentisch. Direkt. Nahbar.${extraInstructions ? ` ZUSATZ: ${extraInstructions}` : ""}${styleProfile ? ` STIL: ${styleProfile}` : ""}`
+            content: `Du siehst ein Bild und schreibst genau dazu EINE Instagram-Caption. Gib NUR die Caption aus – kein Prefix, keine Analyse, keine Beschreibung. Starte sofort mit dem ersten Wort der Caption. ICH-Form. Authentisch. Direkt. Nahbar.${extraInstructions ? ` ZUSATZ: ${extraInstructions}` : ""}${styleProfile ? ` STIL: ${styleProfile}` : ""}`
           },
           {
             role: "user",
             content: [
               { type: "image_url", image_url: { url: imageBase64 } },
-              { type: "text", text: `Schau dir dieses Bild genau an. Denk kurz darüber nach was du siehst. Dann schreibe NUR die Instagram-Caption (80-120 Wörter + 8-10 Hashtags) – KEINE Beschreibung davor. Branche: ${businessType || "allgemein"}.` },
+              { type: "text", text: `Schreibe EINE Instagram-Caption (80-120 Wörter + 8-10 Hashtags) für dieses Bild. ICH-Form. Authentisch. Direkt. KEINE Bildbeschreibung davor. Starte direkt mit der Caption. Branche: ${businessType || "allgemein"}.` },
             ],
           },
         ],
