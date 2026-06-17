@@ -11,14 +11,13 @@ type GenerateRequest = {
   context?: GenerationContext;
 };
 
-function isValidRequest(body: GenerateRequest): body is Required<GenerateRequest> {
+function isValidRequest(body: GenerateRequest): boolean {
   return Boolean(
     body.type &&
     projectOutputTypes.includes(body.type) &&
     body.context?.project?.id &&
     typeof body.context.favoriteCount === "number" &&
-    Array.isArray(body.context.tags) &&
-    typeof body.context.extraInstructions === "string"
+    Array.isArray(body.context.tags)
   );
 }
 
@@ -110,49 +109,43 @@ export async function POST(request: Request) {
     });
   }
 
-  // 1. Try OpenAI first
+  // Use OpenAI exclusively for quality
   const openaiKey = process.env.OPENAI_API_KEY;
-  if (openaiKey) {
-    try {
-      const response = await fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${openaiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: process.env.OPENAI_MODEL ?? "gpt-5.4-mini",
-          input: prompt
-        }),
-        signal: AbortSignal.timeout(60_000)
-      });
-
-      const payload: unknown = await response.json();
-      if (response.ok) {
-        const content = readOutputText(payload);
-        if (content) {
-          return NextResponse.json({ content, generator: "openai" });
-        }
-      }
-      // OpenAI failed (quota, auth, etc.) → silently fall through to DeepSeek
-    } catch {
-      // OpenAI unreachable → silently fall through to DeepSeek
-    }
+  if (!openaiKey) {
+    return NextResponse.json({ error: "OpenAI-Key fehlt", generator: "none" }, { status: 500 });
   }
 
-  // 2. Fallback to DeepSeek
   try {
-    const deepSeekContent = await generateWithDeepSeek(prompt, body.context.businessType);
-    if (deepSeekContent) {
-      return NextResponse.json({ content: deepSeekContent, generator: "deepseek" });
-    }
-  } catch {
-    // DeepSeek also failed → fall through to demo
-  }
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${openaiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `Du schreibst Instagram-Captions in ICH-Form. STRIKTES VERBOT: Inmitten, Umarmung, Herz, Herzen, blühend, Pracht, Zauber, märchenhaft, unvergesslich, Magie, traumhaft, Moment, wunderschön, besondere. Schreib wie ein echter Mensch. Kurze Sätze. Authentisch. Direkt. Nahbar. Branche: ${branche}.`
+          },
+          { role: "user", content: prompt }
+        ],
+        max_tokens: 1400,
+        temperature: 1.0,
+        frequency_penalty: 1.5,
+        presence_penalty: 1.5,
+      }),
+      signal: AbortSignal.timeout(60_000)
+    });
 
-  // 3. Last resort: demo content
-  return NextResponse.json({
-    content: generateDemoContent(body.type, body.context),
-    generator: "demo"
-  });
+    const payload: unknown = await response.json();
+    const content = readChatCompletionText(payload);
+    if (content) {
+      return NextResponse.json({ content, generator: "openai" });
+    }
+    return NextResponse.json({ error: "OpenAI: Kein Inhalt", generator: "openai" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "OpenAI nicht erreichbar", generator: "none" }, { status: 500 });
+  }
 }
