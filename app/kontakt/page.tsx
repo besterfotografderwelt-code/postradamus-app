@@ -10,16 +10,6 @@ export default function ContactPage() {
         direkte Nachricht.
       </p>
       <ContactForm />
-      <div className="contact-card" style={{ marginTop: 28 }}>
-        <div>
-          <span>Support</span>
-          <a href="mailto:support@postradamus.ai">support@postradamus.ai</a>
-        </div>
-        <div>
-          <span>Allgemein</span>
-          <a href="mailto:contact@postradamus.ai">contact@postradamus.ai</a>
-        </div>
-      </div>
     </section>
   );
 }
