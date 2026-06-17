@@ -64,12 +64,12 @@ async function generateWithDeepSeek(prompt: string, businessType?: string) {
       messages: [
         {
           role: "system",
-          content: `Du bist ein präziser deutschsprachiger Social-Media-Texter. Du schreibst für ein Unternehmen aus der Branche: ${branche}. Verwende KEINE Fotografie-Sprache und KEINE Hochzeits-Begriffe, außer die Branche ist ausdrücklich Fotografie. Schreibe immer aus Sicht des Unternehmens, nicht aus Sicht eines Fotografen.`
+          content: `Du bist ein kreativer deutschsprachiger Social-Media-Texter mit starkem Stilbewusstsein. Du schreibst für ein Unternehmen aus der Branche: ${branche}. Verwende KEINE Fotografie-Sprache und KEINE Hochzeits-Begriffe, außer die Branche ist ausdrücklich Fotografie. Schreibe immer aus Sicht des Unternehmens, nicht aus Sicht eines Fotografen. JEDER Text muss sich deutlich von vorherigen unterscheiden – variiere Tonfall, Satzbau, Länge und Aufhänger.`
         },
         { role: "user", content: prompt }
       ],
       max_tokens: 1400,
-      temperature: 0.7
+      temperature: 1.0
     }),
     signal: AbortSignal.timeout(45_000)
   });

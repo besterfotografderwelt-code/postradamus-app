@@ -83,7 +83,7 @@ export function buildGenerationPrompt(type: ProjectOutputType, context: Generati
   const business = resolveBusinessContext(context);
   const instructions: Record<ProjectOutputType, string> = {
     blog: "Schreibe einen emotionalen SEO-tauglichen Blogartikel mit Titel, kurzem Einstieg, drei Zwischenüberschriften und einem natürlichen Abschluss. Erfinde keine Fakten.",
-    instagram_caption: "Schreibe eine etwas längere Instagram-Caption mit etwa 80 bis 120 Wörtern, einem persönlichen Gedanken, einer kurzen Frage und 8 bis 10 passenden Hashtags. Keine Floskeln.",
+    instagram_caption: "Schreibe eine Instagram-Caption mit 80-120 Wörtern. SEHR WICHTIG: Variiere bei jeder Caption Aufhänger und Stil stark – mal mit Frage starten, mal mit Statement, mal mit persönlicher Beobachtung. Unterschiedliche Satzlängen, keine Floskeln, keine Wiederholungen. Endet mit 8-10 Hashtags.",
     hashtags: "Erstelle 20 relevante Hashtags als eine kopierbare Zeile. Mische lokale, thematische und zielgruppenbezogene Begriffe. Keine extrem generischen Spam-Tags.",
     reel_ideas: "Entwickle 5 konkrete Reel-Ideen. Pro Idee: Hook, Bildabfolge, Texteinblendung und empfohlene Länge.",
     gallery_description: "Schreibe eine hochwertige Galeriebeschreibung in zwei kurzen Absätzen, emotional aber nicht kitschig.",
