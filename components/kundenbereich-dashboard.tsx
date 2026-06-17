@@ -62,11 +62,19 @@ export function KundenbereichDashboard() {
   useEffect(() => {
     fetch("/api/projects")
       .then((r) => {
-        if (r.status === 401) { setAuthed(false); return []; }
-        setAuthed(true);
-        return r.ok ? r.json() : [];
+        if (!r.ok) {
+          setAuthed(false);
+          setProjectsLoaded(true);
+          return null;
+        }
+        return r.json();
       })
-      .then((data) => { setProjects(data?.projects ?? []); setProjectsLoaded(true); })
+      .then((data) => {
+        if (data === null) return; // Not authenticated
+        setProjects(data?.projects ?? []);
+        setAuthed(true);
+        setProjectsLoaded(true);
+      })
       .catch(() => { setAuthed(false); setProjectsLoaded(true); });
   }, []);
 
