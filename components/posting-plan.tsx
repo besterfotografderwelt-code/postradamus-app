@@ -699,7 +699,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
 
-  // Auto-generate KI-Captions via GPT-4o-mini Vision – KI SIEHT jedes Bild
+  // Auto-generate via 2-Step Vision Pipeline (Analyse → Caption → Validate → Retry)
   useEffect(() => {
     const validSlots = filteredSlots.filter((s) => s.type !== "story" && s.type !== "reel");
     if (validSlots.length === 0 || !images.length) return;
@@ -719,6 +719,8 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
       }
     }
 
+    const generatedOpenings: string[] = [];
+
     async function generate() {
       for (let i = 0; i < validSlots.length; i++) {
         if (cancelled) return;
@@ -729,20 +731,33 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
         const base64 = await imageToBase64(img);
         if (!base64) continue;
 
+        let ob = "";
+        try {
+          const raw = localStorage.getItem("flowstream.onboarding");
+          if (raw) {
+            const data = JSON.parse(raw);
+            const sp = data.styleProfile;
+            if (sp?.promptAddition) ob = sp.promptAddition;
+            else if (sp?.traits) ob = `Stil: ${sp.traits}`;
+          }
+        } catch { /* ignore */ }
+
         try {
           const res = await fetch("/api/generate-vision", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               imageBase64: base64,
-              extraInstructions: tone ? `Tonalität: ${tone}. ICH-Form. Keine Floskeln.` : "ICH-Form. Keine Floskeln.",
-              styleProfile: styleProfile || undefined,
-              businessType,
+              onBoardingString: ob,
+              slotIndex: i,
+              previousOpenings: generatedOpenings,
             }),
           });
           const data = await res.json();
           if (data.content && !cancelled) {
             setEditedCaptions((prev) => ({ ...prev, [slot.id]: data.content }));
+            const opening = data.content.split(/[.!?]/)[0].trim().toLowerCase();
+            if (opening) generatedOpenings.push(opening);
           }
         } catch { /* skip */ }
       }
