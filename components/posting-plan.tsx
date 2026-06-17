@@ -748,7 +748,8 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               imageBase64: base64,
-              onBoardingString: ob,
+              businessType,
+              brandName: "",
               slotIndex: i,
               previousOpenings: generatedOpenings,
             }),

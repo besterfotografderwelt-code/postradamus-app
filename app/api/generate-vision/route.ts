@@ -1,25 +1,19 @@
 import { NextResponse } from "next/server";
 
-// ── Setup ──
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
-const VISION_MODEL = "gpt-4o-mini";
-const TEXT_MODEL = "gpt-4o-mini";
+const MODEL = "gpt-4o-mini";
 
 const TEMPERATURE = 0.65;
-const FREQUENCY_PENALTY = 0.3;
-const PRESENCE_PENALTY = 0.2;
+const MAX_TOKENS_ANALYZE = 600;
+const MAX_TOKENS_CAPTION = 1200;
 
-const BANNED_WORDS = [
+const DEFAULT_BLOCKED_TERMS = [
   "unvergesslich", "Inmitten", "magisch", "besondere Momente", "einzigartig",
   "authentisch eingefangen", "perfekter Moment", "zauberhaft", "Traumkulisse",
   "märchenhaft", "blühend", "Pracht", "Herzenssache",
 ];
 
-const BANNED_PREFIXES = [
-  /^\s*(\*\*)?\s*(caption|beschreibung|das bild zeigt|auf dem bild|dieses bild|dieses foto)/i,
-];
-
-const CAPTION_STRATEGIES = [
+const CAPTION_STRATEGIES: Array<{ id: string; desc: string }> = [
   { id: "micro_observation", desc: "Beginne mit einer kleinen konkreten Beobachtung aus dem Bild." },
   { id: "confident_statement", desc: "Beginne mit einem selbstbewussten Statement." },
   { id: "behind_the_scene", desc: "Schreibe, als würde man einen kleinen Blick hinter den Moment bekommen." },
@@ -27,56 +21,146 @@ const CAPTION_STRATEGIES = [
   { id: "question_to_audience", desc: "Baue am Ende eine natürliche Frage an die Leser ein." },
   { id: "quiet_personal_thought", desc: "Beginne mit einem kurzen inneren Gedanken." },
   { id: "contrast_feeling", desc: "Nutze einen Gegensatz zwischen sichtbarer Szene und persönlichem Gefühl." },
-  { id: "direct_oneliner", desc: "Erste Zeile kurz und direkt (max 6 Wörter), danach persönlich." },
+  { id: "direct_oneliner", desc: "Erste Zeile kurz und direkt, danach persönlich." },
   { id: "detail_zoom", desc: "Zoome auf ein einziges konkretes Detail und erzähle davon ausgehend." },
   { id: "mood_first", desc: "Beginne mit der Stimmung, nicht mit dem Bildinhalt." },
 ];
 
-// ── Helpers ──
+// ── Narrator Profiles ──
 
-function pickStrategy(index: number) {
-  return CAPTION_STRATEGIES[index % CAPTION_STRATEGIES.length];
+type NarratorProfile = {
+  narratorType: "brand_or_business" | "solo_expert" | "team" | "personal_brand" | "person_in_image";
+  narratorLabel: string;
+  industry: string;
+  brandName: string;
+  allowedPerspective: "we" | "i" | "neutral" | "mixed";
+  forbiddenPerspective: string;
+  description: string;
+};
+
+function buildNarratorProfile(businessType?: string, brandName?: string): NarratorProfile {
+  const name = brandName || "Account";
+  const b = (businessType || "").toLowerCase();
+
+  const profiles: Record<string, NarratorProfile> = {
+    hochzeitsfotograf: {
+      narratorType: "solo_expert", narratorLabel: "Hochzeitsfotograf", industry: "Hochzeitsfotografie", brandName: name,
+      allowedPerspective: "i", forbiddenPerspective: "person_in_image",
+      description: "Ich ist der Fotograf, nicht die Braut oder das Paar.",
+    },
+    portraitfotograf: {
+      narratorType: "solo_expert", narratorLabel: "Portraitfotograf", industry: "Portraitfotografie", brandName: name,
+      allowedPerspective: "i", forbiddenPerspective: "person_in_image",
+      description: "Ich ist der Fotograf. Die porträtierte Person spricht nicht.",
+    },
+    produktfotograf: {
+      narratorType: "solo_expert", narratorLabel: "Produktfotograf", industry: "Produktfotografie", brandName: name,
+      allowedPerspective: "i", forbiddenPerspective: "product_as_speaker",
+      description: "Ich ist der Fotograf. Das Produkt spricht nicht.",
+    },
+    restaurant: {
+      narratorType: "team", narratorLabel: "Restaurant-Team", industry: "Gastronomie", brandName: name,
+      allowedPerspective: "we", forbiddenPerspective: "guest_or_food_as_speaker",
+      description: "Wir ist das Restaurant-Team. Weder Gast noch Gericht sprechen.",
+    },
+    fitness: {
+      narratorType: "solo_expert", narratorLabel: "Fitnesscoach", industry: "Fitness", brandName: name,
+      allowedPerspective: "i", forbiddenPerspective: "client_in_image",
+      description: "Ich ist der Coach. Die trainierende Person spricht nicht automatisch.",
+    },
+    mode: {
+      narratorType: "team", narratorLabel: "Salon-Team", industry: "Beauty/Mode", brandName: name,
+      allowedPerspective: "we", forbiddenPerspective: "client_in_image",
+      description: "Wir ist der Salon. Die Kundin im Bild spricht nicht.",
+    },
+    hotel: {
+      narratorType: "brand_or_business", narratorLabel: "Hotel", industry: "Hotellerie", brandName: name,
+      allowedPerspective: "we", forbiddenPerspective: "guest_as_speaker",
+      description: "Wir ist das Hotel. Der Gast im Bild spricht nicht.",
+    },
+    immobilien: {
+      narratorType: "brand_or_business", narratorLabel: "Immobilienagentur", industry: "Immobilien", brandName: name,
+      allowedPerspective: "we", forbiddenPerspective: "house_or_buyer_as_speaker",
+      description: "Wir ist die Agentur. Die Immobilie spricht nicht.",
+    },
+    handwerk: {
+      narratorType: "team", narratorLabel: "Handwerksbetrieb", industry: "Handwerk", brandName: name,
+      allowedPerspective: "we", forbiddenPerspective: "customer_in_image",
+      description: "Wir ist der Handwerksbetrieb. Der Kunde im Bild spricht nicht.",
+    },
+    reise: {
+      narratorType: "brand_or_business", narratorLabel: "Reiseanbieter", industry: "Reise", brandName: name,
+      allowedPerspective: "we", forbiddenPerspective: "traveler_as_speaker",
+      description: "Wir ist der Reiseanbieter. Der Reisende im Bild spricht nicht.",
+    },
+    kunst: {
+      narratorType: "solo_expert", narratorLabel: "Künstler", industry: "Kunst", brandName: name,
+      allowedPerspective: "i", forbiddenPerspective: "artwork_as_speaker",
+      description: "Ich ist der Künstler. Das Werk spricht nicht für sich.",
+    },
+    personal_brand: {
+      narratorType: "person_in_image", narratorLabel: "Creator", industry: "Personal Brand", brandName: name,
+      allowedPerspective: "i", forbiddenPerspective: "none",
+      description: "Die sichtbare Person ist der Account und darf selbst sprechen.",
+    },
+  };
+
+  return profiles[b] || profiles.sonstiges || {
+    narratorType: "brand_or_business", narratorLabel: "Unternehmen", industry: b || "Allgemein", brandName: name,
+    allowedPerspective: "we", forbiddenPerspective: "person_in_image",
+    description: "Wir ist das Unternehmen. Personen im Bild sprechen nicht.",
+  };
 }
 
-function validateCaption(caption: string, previousOpenings: string[] = []): string[] {
+// ── Validator ──
+
+function validateCaption(caption: string, narrator: NarratorProfile, prevOpenings: string[], blockedTerms: string[]): string[] {
   const errors: string[] = [];
+  const lower = caption.toLowerCase();
 
-  // Check banned prefixes
-  for (const pattern of BANNED_PREFIXES) {
-    if (pattern.test(caption)) {
-      errors.push("Caption beginnt mit verbotenem Prefix oder Bildbeschreibung");
-      break;
+  // Prefix check
+  if (/^\s*(\*\*)?\s*(caption|beschreibung|das bild zeigt|auf dem bild|dieses bild|dieses foto)/i.test(caption)) {
+    errors.push("Prefix/Bildbeschreibung am Anfang");
+  }
+
+  // Blocked terms
+  for (const word of blockedTerms) {
+    const esc = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`\\b${esc}\\b`, "i").test(caption)) {
+      errors.push(`Verboten: ${word}`);
     }
   }
 
-  // Check banned words
-  for (const word of BANNED_WORDS) {
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    if (new RegExp(`\\b${escaped}\\b`, "i").test(caption)) {
-      errors.push(`Verbotenes Wort: ${word}`);
+  // Perspective check
+  const personPhrases = ["mein hochzeitstag", "mein kleid", "mein mann", "meine frau", "mein styling",
+    "meine frisur", "unser großer tag", "ich habe ja gesagt", "ich bin so glücklich", "ich fühle mich"];
+  if (narrator.narratorType !== "person_in_image") {
+    for (const phrase of personPhrases) {
+      if (lower.includes(phrase)) {
+        errors.push(`Person-im-Bild-Perspektive: "${phrase}"`);
+        break;
+      }
     }
   }
-
-  // Check ICH-Form (forbidden for photographer perspective)
-  if (/\bich\b|\bmir\b|\bmich\b|\bmein\b|\bmeine\b|\bunser\b|\buns\b|\bwir\b/i.test(caption)) {
-    errors.push("Caption enthält Ich/Wir-Form – Fotografen-Perspektive erforderlich");
+  if (narrator.allowedPerspective === "we" && /\bich\b|\bmich\b|\bmein\b|\bmeine\b/i.test(caption)) {
+    errors.push("Ich-Form obwohl nur Wir-Perspektive erlaubt");
   }
 
-  // Count hashtags
+  // Hashtags
   const hashtags = caption.match(/#[\w\u00C0-\u024F]+/g) || [];
   if (hashtags.length < 8 || hashtags.length > 10) {
-    errors.push(`Hashtag-Anzahl: ${hashtags.length} (soll 8-10)`);
+    errors.push(`Hashtags: ${hashtags.length} (8-10)`);
   }
 
-  // Count words (without hashtags)
+  // Words
   const words = caption.replace(/#[\w\u00C0-\u024F]+/g, "").trim().split(/\s+/).filter(Boolean);
   if (words.length < 80 || words.length > 120) {
-    errors.push(`Wortanzahl: ${words.length} (soll 80-120)`);
+    errors.push(`Wörter: ${words.length} (80-120)`);
   }
 
-  // Check opening similarity
+  // Opening similarity
   const opening = caption.split(/[.!?]/)[0].trim().toLowerCase();
-  for (const prev of previousOpenings) {
+  for (const prev of prevOpenings) {
     if (opening && prev && opening === prev) {
       errors.push("Satzanfang identisch mit vorheriger Caption");
       break;
@@ -86,13 +170,29 @@ function validateCaption(caption: string, previousOpenings: string[] = []): stri
   return errors;
 }
 
-function callOpenAI(model: string, messages: Array<Record<string, unknown>>, type: string) {
+// ── Helpers ──
+
+function callOpenAI(type: string, messages: Array<Record<string, unknown>>) {
   return fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${OPENAI_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages, max_tokens: type === "analyze" ? 600 : 1000, temperature: TEMPERATURE }),
+    body: JSON.stringify({
+      model: MODEL,
+      messages,
+      max_tokens: type === "analyze" ? MAX_TOKENS_ANALYZE : MAX_TOKENS_CAPTION,
+      temperature: TEMPERATURE,
+      frequency_penalty: 0.3,
+      presence_penalty: 0.2,
+    }),
     signal: AbortSignal.timeout(60_000),
   });
+}
+
+function parseJSON(raw: string): Record<string, unknown> {
+  try {
+    const m = raw.match(/\{[\s\S]*\}/);
+    return m ? JSON.parse(m[0]) : {};
+  } catch { return {}; }
 }
 
 // ── Main Handler ──
@@ -100,137 +200,94 @@ function callOpenAI(model: string, messages: Array<Record<string, unknown>>, typ
 export async function POST(request: Request) {
   if (!OPENAI_KEY) return NextResponse.json({ error: "Kein OpenAI-Key" }, { status: 500 });
 
-  const { imageBase64, onBoardingString, slotIndex, previousOpenings } = await request.json();
+  const { imageBase64, businessType, brandName, slotIndex, previousOpenings, blockedTerms } = await request.json();
   if (!imageBase64) return NextResponse.json({ error: "Kein Bild" }, { status: 400 });
 
-  const strategy = pickStrategy(slotIndex || 0);
+  const narrator = buildNarratorProfile(businessType, brandName);
+  const strategy = CAPTION_STRATEGIES[(slotIndex || 0) % CAPTION_STRATEGIES.length];
   const prevList: string[] = Array.isArray(previousOpenings) ? previousOpenings : [];
-
-  console.log(`[vision] Slot ${slotIndex}, Strategy: ${strategy.id}`);
+  const blocked: string[] = Array.isArray(blockedTerms) && blockedTerms.length > 0 ? blockedTerms : DEFAULT_BLOCKED_TERMS;
 
   try {
     // ── Step 1: Image Analysis ──
-    const analyzeRes = await callOpenAI(VISION_MODEL, [
-      {
-        role: "system",
-        content: "Du analysierst Bilder für Instagram-Captions. Gib NUR JSON zurück. Keine Einleitung. Keine Caption."
-      },
+    const aRes = await callOpenAI("analyze", [
+      { role: "system", content: "Analysiere Bilder. Nur JSON. Keine Einleitung. Keine Caption." },
       {
         role: "user",
         content: [
           { type: "image_url", image_url: { url: imageBase64, detail: "high" } },
-          {
-            type: "text",
-            text: `Analysiere dieses Bild. Gib NUR dieses JSON zurück (kein Markdown, kein Code-Block):\n{"scene":"kurze Szene","subject":"Hauptmotiv","mood":"Stimmung","colors":["Farbe1","Farbe2"],"details":["Detail1","Detail2","Detail3"],"captionAngles":["Winkel1","Winkel2","Winkel3"]}\n\nRegeln: Nur sichtbare Fakten, keine poetische Interpretation, keine erfundenen Details.`
-          },
+          { type: "text", text: `Gib NUR JSON: {"scene":"kurze Szene","subject":"Hauptmotiv","mood":"Stimmung","colors":["Farbe1","Farbe2"],"details":["Detail1","Detail2","Detail3"],"captionAngles":["Winkel1","Winkel2","Winkel3"]}. Nur Fakten, keine Interpretation.` },
         ],
       },
-    ], "analyze");
+    ]);
+    const aPayload = await aRes.json() as { error?: { message?: string }; choices?: Array<{ message?: { content?: string } }> };
+    if (!aRes.ok) throw new Error(aPayload?.error?.message ?? "Analyse fehlgeschlagen");
+    const analysis = parseJSON(aPayload.choices?.[0]?.message?.content ?? "");
 
-    const analyzePayload = await analyzeRes.json() as { error?: { message?: string }; choices?: Array<{ message?: { content?: string } }> };
-    if (!analyzeRes.ok || !analyzePayload.choices?.[0]?.message?.content) {
-      throw new Error(analyzePayload?.error?.message ?? "Analyse fehlgeschlagen");
-    }
+    // ── Step 2: Caption ──
+    const perspectiveRule = narrator.narratorType === "person_in_image"
+      ? "Du schreibst aus Sicht der sichtbaren Person (nur erlaubt weil narratorType=person_in_image)."
+      : narrator.allowedPerspective === "i"
+        ? `Schreibe aus ICH-Perspektive. "Ich" = ${narrator.narratorLabel}. ${narrator.description}`
+        : `Schreibe aus WIR-Perspektive. "Wir" = ${narrator.narratorLabel}. ${narrator.description}`;
 
-    let analysis: Record<string, unknown> = {};
-    const rawAnalysis = analyzePayload.choices[0].message.content.trim();
-    try {
-      // Try to parse JSON from response (may have markdown wrapping)
-      const jsonMatch = rawAnalysis.match(/\{[\s\S]*\}/);
-      if (jsonMatch) analysis = JSON.parse(jsonMatch[0]);
-    } catch {
-      analysis = { scene: rawAnalysis, subject: "", mood: "", colors: [], details: [], captionAngles: [] };
-    }
-
-    console.log(`[vision] Analysis: ${analysis.subject || "(kein subject)"}`);
-
-    // ── Step 2: Caption Generation ──
-    const captionRes = await callOpenAI(TEXT_MODEL, [
+    const cRes = await callOpenAI("caption", [
       {
         role: "system",
-        content: `Du schreibst Instagram-Captions für einen professionellen Hochzeitsfotografen. DU BIST DER FOTOGRAF, NICHT die Braut oder der Bräutigam. Beschreibe den Moment aus Fotografen-Sicht. Kein "ich", "mir", "mich", "wir", "uns". Der Fotograf hat das Bild gemacht. Authentisch. Direkt. Kein Kitsch.${onBoardingString ? ` STIL: ${onBoardingString}` : ""}`
+        content: [
+          `Du schreibst Instagram-Captions für verschiedene Branchen.`,
+          `NARRATOR: ${JSON.stringify(narrator)}`,
+          `REGEL: ${perspectiveRule}`,
+          `Die Person oder das Objekt im Bild ist NICHT automatisch der Erzähler.`,
+          `Nur wenn narratorType="person_in_image" darf die sichtbare Person selbst sprechen.`,
+          `Natürlich, konkret, direkt. Kein Kitsch. Keine Bildbeschreibung.`,
+        ].join(" "),
       },
       {
         role: "user",
         content: [
-          `Schreibe eine Instagram-Caption (80-120 Wörter + 8-10 Hashtags). Perspektive: Fotograf beschreibt den Moment. Keine Ich-Form.`,
-          ``,
-          `BILDANALYSE: ${JSON.stringify(analysis)}`,
+          `Schreibe eine Instagram-Caption (80-120 Wörter + 8-10 Hashtags).`,
+          `NARRATOR: ${JSON.stringify(narrator)}`,
+          `PERSPEKTIVE: ${perspectiveRule}`,
+          `ANALYSE: ${JSON.stringify(analysis)}`,
           `STRATEGIE: ${strategy.desc}`,
-          prevList.length ? `VERMEIDE diese Satzanfänge: ${prevList.join(" | ")}` : "",
-          ``,
-          `REGELN:`,
+          prevList.length ? `VERMEIDE Satzanfänge: ${prevList.join(" | ")}` : "",
+          `BLOCKED: ${blocked.join(", ")}`,
           `- Kein Prefix, kein "Caption:", kein "Das Bild zeigt"`,
-          `- Keine Bildbeschreibung von außen`,
-          `- Keine verbotenen Wörter: ${BANNED_WORDS.join(", ")}`,
-          `- 2-3 Details aus der Analyse einbauen`,
-          `- Nicht beginnen mit: Heute, Manchmal, Inmitten, Es gibt, Dieses`,
-          `- Am Ende JSON: {"caption":"dein Text mit Hashtags"}`,
+          `- Kein "ich" als Person im Bild (außer narratorType=person_in_image)`,
+          `- Nutze 2-3 Details aus der Analyse`,
+          `- JSON: {"caption":"Text mit Hashtags"}`,
         ].filter(Boolean).join("\n"),
       },
-    ], "caption");
-
-    const captionPayload = await captionRes.json() as { error?: { message?: string }; choices?: Array<{ message?: { content?: string } }> };
-    if (!captionRes.ok || !captionPayload.choices?.[0]?.message?.content) {
-      throw new Error(captionPayload?.error?.message ?? "Caption fehlgeschlagen");
-    }
+    ]);
+    const cPayload = await cRes.json() as { error?: { message?: string }; choices?: Array<{ message?: { content?: string } }> };
+    if (!cRes.ok) throw new Error(cPayload?.error?.message ?? "Caption fehlgeschlagen");
 
     let caption = "";
-    const rawCaption = captionPayload.choices[0].message.content.trim();
-    try {
-      const jsonMatch = rawCaption.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        caption = parsed.caption || "";
-      }
-    } catch { /* fall through */ }
-    if (!caption) caption = rawCaption;
+    const raw = cPayload.choices?.[0]?.message?.content ?? "";
+    const parsed = parseJSON(raw);
+    caption = (parsed.caption as string) || raw;
 
-    console.log(`[vision] Raw caption len: ${caption.length}`);
-
-    // ── Validation & Retry ──
-    let errors = validateCaption(caption, prevList);
+    // ── Validate & Retry ──
+    let errors = validateCaption(caption, narrator, prevList, blocked);
     let retries = 0;
-
     while (errors.length > 0 && retries < 2) {
-      console.log(`[vision] Retry ${retries + 1}, errors: ${errors.join(", ")}`);
-
-      const retryRes = await callOpenAI(TEXT_MODEL, [
-        { role: "system", content: "Du korrigierst Instagram-Captions. Gib NUR das korrigierte JSON zurück." },
-        {
-          role: "user",
-          content: [
-            `Die folgende Caption hat Fehler. Korrigiere sie.`,
-            `FEHLER: ${errors.join(". ")}`,
-            `CAPTION: ${caption}`,
-            `STRATEGIE: ${strategy.desc}`,
-            `Gib NUR: {"caption":"korrigierte Version"}`,
-          ].join("\n"),
-        },
-      ], "retry");
-
-      const retryPayload = await retryRes.json() as { choices?: Array<{ message?: { content?: string } }> };
-      if (retryRes.ok && retryPayload.choices?.[0]?.message?.content) {
-        const rawRetry = retryPayload.choices[0].message.content.trim();
-        try {
-          const jsonMatch = rawRetry.match(/\{[\s\S]*\}/);
-          if (jsonMatch) caption = JSON.parse(jsonMatch[0]).caption || caption;
-        } catch { /* keep old */ }
+      const reasons = errors.join(". ");
+      const rRes = await callOpenAI("retry", [
+        { role: "system", content: `Korrigiere eine Instagram-Caption. Fehler: ${reasons}. NARRATOR: ${narrator.narratorLabel}. ${perspectiveRule}` },
+        { role: "user", content: `Fehler: ${reasons}\nCaption: ${caption}\nStrategie: ${strategy.desc}\nGib NUR: {"caption":"korrigiert"}` },
+      ]);
+      const rPayload = await rRes.json() as { choices?: Array<{ message?: { content?: string } }> };
+      if (rRes.ok && rPayload.choices?.[0]?.message?.content) {
+        const rParsed = parseJSON(rPayload.choices[0].message.content);
+        if (rParsed.caption) caption = rParsed.caption as string;
       }
-      errors = validateCaption(caption, prevList);
+      errors = validateCaption(caption, narrator, prevList, blocked);
       retries++;
     }
 
-    // Final validation passthrough
-    if (errors.length > 0) {
-      console.log(`[vision] Final errors (soft): ${errors.join(", ")}`);
-    }
-
-    console.log(`[vision] Final caption ok, len=${caption.length}`);
-
-    return NextResponse.json({ content: caption, generator: "openai-vision-2step" });
+    return NextResponse.json({ content: caption, generator: "openai-narrator" });
   } catch (e) {
-    console.error(`[vision] ERROR:`, e instanceof Error ? e.message : e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
