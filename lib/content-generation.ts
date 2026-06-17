@@ -100,6 +100,7 @@ export function buildGenerationPrompt(type: ProjectOutputType, context: Generati
       : "Grammatik: Verwende ausschließlich korrektes Deutsch. Schreibe ohne Hochzeitssprache und ohne Brautpaar-Formulierungen, außer das Projekt ist ausdrücklich eine Hochzeit.",
     `Aufgabe: ${projectOutputTypeLabel[type]}.`,
     instructions[type],
+    context.extraInstructions ? `EXTRA-ANWEISUNG (höchste Priorität): ${context.extraInstructions}` : "",
     ...(context.styleProfile ? [`WICHTIG - Schreibe im Stil des Nutzers: ${context.styleProfile}`] : []),
     "Schreibe direkt den verwendbaren Inhalt ohne Vorbemerkung oder Analyse.",
     "",
