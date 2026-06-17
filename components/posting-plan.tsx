@@ -378,8 +378,8 @@ function generatePostSlots(images: ProjectImage[], tone: string, businessType = 
     : normalizedBusinessType === "restaurant" ? restaurantHashtags
     : normalizedBusinessType === "produktfotograf" ? productHashtags
     : genericHashtagSets;
-  const activeCaptions = ["KI-Caption wird generiert …"];
-  function nextCaption() { return activeCaptions[0]; }
+  const activeCaptions = [""];
+  function nextCaption() { return ""; }
 
   const weddingStoryCaptions: Record<string, string[]> = {
     romantisch: ["Hinter den Kulissen der Liebe, wo die stillen Sekunden oft schon die schönste Stimmung tragen.", "Ein kleiner Blick vor dem großen Moment, bevor die eigentliche Geschichte beginnt.", "Leise Vorfreude, große Gefühle und genau die Ruhe, die man später noch spürt."],
@@ -740,9 +740,8 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
               businessType,
             }),
           });
-          if (cancelled) return;
           const data = await res.json();
-          if (data.content) {
+          if (data.content && !cancelled) {
             setEditedCaptions((prev) => ({ ...prev, [slot.id]: data.content }));
           }
         } catch { /* skip */ }
