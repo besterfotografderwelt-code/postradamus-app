@@ -833,7 +833,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
       <div className="plan-edit-hint" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
           <strong>Jeder Post bleibt bearbeitbar.</strong>
-          <span>Über „Bearbeiten" kannst du Caption, Stil, markierte Accounts, Hashtags, Bildbeschnitt und Bildauswahl ändern.</span>
+<span>Über &bdquo;Bearbeiten&ldquo; kannst du Caption, Stil, markierte Accounts, Hashtags, Bildbeschnitt und Bildauswahl ändern.</span>
         </div>
         <button
           className="button"
@@ -846,7 +846,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   images: images.slice(0, 30),
-                  project: { couple_name: images[0]?.filename ?? "Projekt", businessName: businessType },
+                  project: { couple_name: images[0]?.name ?? "Projekt", businessName: businessType },
                   tone,
                   businessType,
                   styleProfile,

@@ -1,30 +1,44 @@
 import { NextResponse } from "next/server";
-import { resolveBusinessContext } from "@/lib/content-generation";
-import type { Project } from "@/lib/types";
+
+const businessLabels: Record<string, string> = {
+  hochzeitsfotograf: "eine Hochzeitsfotografin",
+  restaurant: "ein Restaurant",
+  fitness: "ein Fitnessstudio",
+  mode: "ein Mode-Label",
+  hotel: "ein Hotel",
+  immobilien: "eine Immobilienagentur",
+  handwerk: "einen Handwerksbetrieb",
+  portraitfotograf: "eine Portraitfotografin",
+  produktfotograf: "eine Produktfotografin",
+  reise: "einen Reiseanbieter",
+  kunst: "eine Künstlerin",
+  sonstiges: "ein Unternehmen",
+};
 
 export async function POST(request: Request) {
   const { images, project, tone, businessType, styleProfile } = await request.json();
-  const business = resolveBusinessContext({ businessType: businessType ?? project?.businessType ?? "sonstiges" });
+  const businessLabel = businessLabels[businessType] ?? "ein Unternehmen";
 
   const imageList = (images || [])
-    .map((img: { filename?: string; sortOrder?: number; tags?: string[] }, i: number) =>
-      `Bild ${i + 1}: ${img.filename ?? ""} (Tags: ${(img.tags ?? []).join(", ") || "keine"})`
+    .map((img: { filename?: string; tags?: string[] }, i: number) =>
+      `Bild ${i + 1}: ${img.filename ?? `#${i + 1}`} (Tags: ${(img.tags ?? []).join(", ") || "keine"})`
     )
     .join("\n");
 
+  const count = Math.min((images || []).length, 30);
   const prompt = [
-    `Du schreibst ${(images || []).length} Instagram-Captions für ${business.businessLabel}.`,
+    `Du schreibst ${count} Instagram-Captions für ${businessLabel}.`,
     `Projekt: ${project?.couple_name || project?.businessName || "Kundenprojekt"}.`,
     `Tonalität: ${tone || "natürlich"}.`,
     `Bildinformationen:\n${imageList}`,
     ``,
-    `ERSTELLE JETZT ${(images || []).length} CAPTIONS. REGELN:`,
-    `1. JEDE Caption muss KOMPLETT ANDERS sein – anderer Einstieg, andere Stimmung, anderer Satzbau`,
-    `2. Keine zwei Captions dürfen auch nur ähnlich klingen`,
-    `3. Variiere zwischen: Frage-Aufhänger, Statement, emotionale Beobachtung, Call-to-Action, Storytelling-Mini`,
-    `4. Jede Caption: 80-120 Wörter, endet mit 8-10 Hashtags`,
-    `5. Format: "Caption 1:" dann Text, "Caption 2:" dann Text, usw.`,
-    `6. Keine Floskeln, keine Phrasen, keine Wiederholungen zwischen den Captions`,
+    'ERSTELLE JETZT GENAU ' + count + ' CAPTIONS. REGELN:',
+    '1. JEDE Caption muss KOMPLETT ANDERS sein – anderer Einstieg, andere Stimmung, anderer Satzbau',
+    '2. Keine zwei Captions dürfen auch nur ähnlich klingen',
+    '3. Variiere zwischen: Frage-Aufhänger, Statement, emotionale Beobachtung, Call-to-Action, Storytelling-Mini',
+    '4. Jede Caption: 80-120 Wörter, endet mit 8-10 Hashtags',
+    '5. Format: "Caption 1:" dann Text, "Caption 2:" dann Text, usw.',
+    '6. Keine Floskeln, keine Phrasen, keine Wiederholungen zwischen den Captions',
     ...(styleProfile ? [`Stil des Nutzers: ${styleProfile}`] : []),
   ].join("\n");
 
@@ -34,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   const isDeepseek = !process.env.OPENAI_API_KEY;
-  const maxTokens = Math.min(4000, (images || []).length * 400);
+  const maxTokens = Math.min(4000, count * 400);
 
   try {
     const res = await fetch(
@@ -52,7 +66,7 @@ export async function POST(request: Request) {
           messages: [
             {
               role: "system",
-              content: `Du bist ein kreativer deutscher Social-Media-Texter. Deine Spezialität: JEDE einzelne Caption ist ein Unikat. Niemals zwei ähnliche Texte. Du schreibst für: ${business.businessLabel}.`
+              content: `Du bist ein kreativer deutscher Social-Media-Texter. Deine Spezialität: JEDE einzelne Caption ist ein Unikat. Niemals zwei ähnliche Texte. Du schreibst für: ${businessLabel}.`
             },
             { role: "user", content: prompt },
           ],
@@ -63,11 +77,11 @@ export async function POST(request: Request) {
       }
     );
 
-    const payload: any = await res.json();
+    const payload = await res.json() as { error?: { message?: string }; choices?: Array<{ message?: { content?: string } }> };
     if (!res.ok) throw new Error(payload?.error?.message ?? "API-Fehler");
 
     const raw = payload.choices?.[0]?.message?.content ?? "";
-    
+
     // Parse captions from "Caption N: ..." format
     const captions: string[] = [];
     const parts = raw.split(/Caption \d+:/i);
