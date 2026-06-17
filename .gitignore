@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.next-dev/
+.next-broken*/
+.next-dev-old*/
+*.log
+test-results/
+.env.local
+.env
+*.tsbuildinfo
+data/instagram-token.json

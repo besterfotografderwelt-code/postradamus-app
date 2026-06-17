@@ -1,0 +1,15 @@
+<svg width="620" height="160" viewBox="0 0 620 160" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title id="title">FeedFlow</title>
+  <rect x="14" y="14" width="132" height="132" rx="31" fill="url(#bg)"/>
+  <path d="M41 67C54 52 71 52 85 67C99 82 116 82 130 67" stroke="white" stroke-width="10" stroke-linecap="round"/>
+  <path d="M31 93C45 78 63 78 77 93C91 108 110 108 124 93" stroke="white" stroke-width="10" stroke-linecap="round" opacity=".78"/>
+  <circle cx="80" cy="80" r="7" fill="white"/>
+  <text x="180" y="101" fill="#1D1D1F" font-family="Inter, Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="64" font-weight="750" letter-spacing="0">FeedFlow</text>
+  <defs>
+    <linearGradient id="bg" x1="36" y1="26" x2="133" y2="135" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DD7FF"/>
+      <stop offset=".48" stop-color="#0071E3"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+</svg>

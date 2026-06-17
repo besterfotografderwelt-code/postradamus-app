@@ -1,0 +1,35 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ptitle">
+  <title id="ptitle">Postradamus Logo</title>
+  <!-- Background circle -->
+  <rect width="256" height="256" rx="58" fill="url(#bg)"/>
+  
+  <!-- Crystal ball base -->
+  <path d="M95 206 C95 206 110 196 128 196 C146 196 161 206 161 206 L155 220 C155 224 143 228 128 228 C113 228 101 224 101 220 Z" fill="white" opacity="0.85"/>
+  
+  <!-- Crystal ball sphere -->
+  <circle cx="128" cy="118" r="68" fill="url(#ball)" opacity="0.95"/>
+  
+  <!-- Crystal ball highlight -->
+  <ellipse cx="108" cy="95" rx="22" ry="18" fill="white" opacity="0.25"/>
+  
+  <!-- Stylized "P" / post icon inside ball -->
+  <path d="M118 86 L118 150 M118 86 L148 86 C157 86 162 93 162 100 C162 107 157 114 148 114 L118 114" 
+        stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Small sparkle stars -->
+  <circle cx="160" cy="80" r="3" fill="white" opacity="0.7"/>
+  <circle cx="90" cy="140" r="2" fill="white" opacity="0.5"/>
+  
+  <defs>
+    <linearGradient id="bg" x1="10" y1="10" x2="246" y2="246" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED"/>
+      <stop offset="0.55" stop-color="#6C2BD9"/>
+      <stop offset="1" stop-color="#4C1D95"/>
+    </linearGradient>
+    <radialGradient id="ball" cx="0.4" cy="0.35" r="0.6" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A78BFA" opacity="0.8"/>
+      <stop offset="0.5" stop-color="#8B5CF6" opacity="0.3"/>
+      <stop offset="1" stop-color="#5B21B6" opacity="0.7"/>
+    </radialGradient>
+  </defs>
+</svg>

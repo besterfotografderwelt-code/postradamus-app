@@ -1,0 +1,14 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title id="title">FeedFlow Mark</title>
+  <rect width="256" height="256" rx="58" fill="url(#bg)"/>
+  <path d="M54 103C79 74 111 74 137 103C163 132 196 132 222 103" stroke="white" stroke-width="19" stroke-linecap="round"/>
+  <path d="M34 153C61 124 95 124 122 153C149 182 184 182 212 153" stroke="white" stroke-width="19" stroke-linecap="round" opacity=".78"/>
+  <circle cx="128" cy="128" r="13" fill="white"/>
+  <defs>
+    <linearGradient id="bg" x1="40" y1="24" x2="219" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DD7FF"/>
+      <stop offset=".48" stop-color="#0071E3"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+</svg>
