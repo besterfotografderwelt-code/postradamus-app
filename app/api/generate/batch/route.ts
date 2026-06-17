@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     'JEDE Caption MUSS ANDERS BEGINNEN als alle anderen. KEINE WIEDERHOLUNG. Jeder Einstieg ein völlig neuer Gedanke.',
     'Verwende ALLE diese Einstiegsarten GENAU EINMAL, dann erfinde komplett neue:',
     'Frage, Statement, Beobachtung, Detail-Aufzählung, Du-Ansprache, Mini-Story, CTA, Vergleich, Überraschung, Szene, rhetorische Frage, Pro-Tipp, Zitat, Gefühls-Erinnerung, Ein-Wort-Einstieg, Zukunftsausblick, Widerspruch, Understatement, Humor, Dringlichkeit.',
-    'JEDE ZWEITE Caption braucht einen CTA ("Jetzt entdecken", "Was denkst du?", "Probier's aus").',
+    'JEDE ZWEITE Caption braucht einen CTA (z.B. \'Jetzt entdecken\', \'Was denkst du?\', \'Probiers aus\').',
     'Jede Caption: 80-120 Wörter + 8-10 Hashtags.',
     'VERBOTENE Wörter am Satzanfang: Inmitten, Ein, Es, Man, Das, Die, Der.',
     'Satzlängen maximal durchmischen: 2 Wörter, dann 22. Kein Muster.',
