@@ -58,10 +58,16 @@ export function KundenbereichDashboard() {
 
   /* Auth check */
   const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
     fetch("/api/projects")
-      .then((r) => (r.ok ? r.json() : []))
+      .then((r) => {
+        if (r.status === 401) { setAuthed(false); return []; }
+        setAuthed(true);
+        return r.ok ? r.json() : [];
+      })
       .then((data) => { setProjects(data?.projects ?? []); setProjectsLoaded(true); })
-      .catch(() => setProjectsLoaded(true));
+      .catch(() => { setAuthed(false); setProjectsLoaded(true); });
   }, []);
 
   useEffect(() => {
