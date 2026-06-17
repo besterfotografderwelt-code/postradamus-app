@@ -722,6 +722,18 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
     const generatedOpenings: string[] = [];
 
     async function generate() {
+      // Read onboarding ONCE for all slots
+      let ob = "";
+      try {
+        const raw = localStorage.getItem("flowstream.onboarding");
+        if (raw) {
+          const data = JSON.parse(raw);
+          const sp = data.styleProfile;
+          if (sp?.promptAddition) ob = sp.promptAddition;
+          else if (sp?.traits) ob = `Stil: ${sp.traits}`;
+        }
+      } catch { /* ignore */ }
+
       for (let i = 0; i < validSlots.length; i++) {
         if (cancelled) return;
         const slot = validSlots[i];
@@ -730,17 +742,6 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
 
         const base64 = await imageToBase64(img);
         if (!base64) continue;
-
-        let ob = "";
-        try {
-          const raw = localStorage.getItem("flowstream.onboarding");
-          if (raw) {
-            const data = JSON.parse(raw);
-            const sp = data.styleProfile;
-            if (sp?.promptAddition) ob = sp.promptAddition;
-            else if (sp?.traits) ob = `Stil: ${sp.traits}`;
-          }
-        } catch { /* ignore */ }
 
         try {
           const res = await fetch("/api/generate-vision", {
