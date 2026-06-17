@@ -72,6 +72,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 }
 
 .nav a:hover, .nav-button:hover { color: var(--text); background: #e8e8ed; }
+.nav-home { display: none; }
 
 /* ── Hamburger ── */
 .hamburger {
@@ -134,6 +135,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
     transition: transform .28s ease;
   }
   .nav-open { transform: translateX(0); }
+  .nav-home { display: block; }
   .nav a, .nav-button {
     padding: 12px 16px;
     border-radius: 12px;
@@ -1934,6 +1936,10 @@ h3 { font-size: 1.15rem; }
 }
 .product-post-card strong { font-size: .86rem; }
 
+.product-mobile-list {
+  display: none;
+}
+
 .feature-list {
   display: grid;
   gap: 10px;
@@ -2123,7 +2129,10 @@ h3 { font-size: 1.15rem; }
   }
   .product-board { grid-template-columns: 1fr; }
   .product-sidebar { display: none; }
-  .product-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .product-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); display: none; }
+  .product-mobile-list { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+  .product-mobile-list li { padding: 11px 15px; border: 1px solid rgba(0,113,227,.1); border-radius: 14px; background: rgba(255,255,255,.7); font-size: .92rem; line-height: 1.45; }
+  .product-mobile-list li strong { color: var(--accent); }
   .product-post-card { padding: 8px; gap: 5px; }
   .product-post-card div { aspect-ratio: 1/1; }
   .product-main-head { padding: 12px 14px; font-size: .9rem; }

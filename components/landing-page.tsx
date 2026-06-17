@@ -167,6 +167,14 @@ export function LandingPage() {
                     </div>
                   ))}
                 </div>
+                <ul className="product-mobile-list">
+                  <li><strong>Feed-Posts</strong> mit KI-Captions</li>
+                  <li><strong>Carousels</strong> mit Bildauswahl</li>
+                  <li><strong>Stories</strong> automatisch geplant</li>
+                  <li><strong>Hashtags</strong> passend generiert</li>
+                  <li><strong>Postingplan</strong> tageweise</li>
+                  <li><strong>Direkt veröffentlichen</strong> via Instagram</li>
+                </ul>
               </div>
             </div>
           </div>

@@ -27,6 +27,7 @@ export function NavMenu({ menu }: NavMenuProps) {
       {open && <div className="nav-overlay" onClick={() => setOpen(false)} />}
 
       <nav className={`nav ${open ? "nav-open" : ""}`} aria-label="Hauptnavigation">
+        <Link className="nav-home" href="/" onClick={() => setOpen(false)}>Home</Link>
         {menu.map((item) =>
           item.action === "signOut" ? (
             <form key="signout" action="/auth/signout" method="post">
