@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(60_000),
     });
 
-    const payload = await res.json() as { error?: { message?: string }; choices?: Array<{ message?: { content?: string } }> };
+    const payload = await response.json() as { error?: { message?: string }; choices?: Array<{ message?: { content?: string } }> };
     if (!response.ok) throw new Error(payload?.error?.message ?? "API-Fehler");
 
     const content = payload.choices?.[0]?.message?.content?.trim();
