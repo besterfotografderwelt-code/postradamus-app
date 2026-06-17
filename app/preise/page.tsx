@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { TrialButton } from "@/components/trial-button";
-import { PayPalButton } from "@/components/paypal-button";
 
 export const metadata: Metadata = {
   title: "Preise – Postradamus",
@@ -100,7 +99,6 @@ export default function PreisePage() {
                 ))}
               </ul>
               <TrialButton />
-              <PayPalButton plan={plan.name.toLowerCase()} label="Direkt abonnieren" />
             </article>
           ))}
         </div>
