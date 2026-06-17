@@ -2,17 +2,10 @@ import { NextResponse } from "next/server";
 
 const businessLabels: Record<string, string> = {
   hochzeitsfotograf: "eine Hochzeitsfotografin",
-  restaurant: "ein Restaurant",
-  fitness: "ein Fitnessstudio",
-  mode: "ein Mode-Label",
-  hotel: "ein Hotel",
-  immobilien: "eine Immobilienagentur",
-  handwerk: "einen Handwerksbetrieb",
-  portraitfotograf: "eine Portraitfotografin",
-  produktfotograf: "eine Produktfotografin",
-  reise: "einen Reiseanbieter",
-  kunst: "eine Künstlerin",
-  sonstiges: "ein Unternehmen",
+  restaurant: "ein Restaurant", fitness: "ein Fitnessstudio", mode: "ein Mode-Label",
+  hotel: "ein Hotel", immobilien: "eine Immobilienagentur", handwerk: "einen Handwerksbetrieb",
+  portraitfotograf: "eine Portraitfotografin", produktfotograf: "eine Produktfotografin",
+  reise: "einen Reiseanbieter", kunst: "eine Künstlerin", sonstiges: "ein Unternehmen",
 };
 
 export async function POST(request: Request) {
@@ -26,45 +19,42 @@ export async function POST(request: Request) {
     )
     .join("\n");
 
-  const styList = [
-    "Sachlich & informierend",
-    "Emotional & nahbar",
-    "Humorvoll & leicht",
-    "Dramatisch & kraftvoll",
-    "Minimalistisch & clean",
-    "Fragend & neugierig",
-    "Storytelling & bildhaft",
-    "Direkt & ehrlich",
-    "Poetisch & atmosphärisch",
-    "Motivierend & aufbauend",
+  const angles = [
+    "der entscheidende Moment, der alles verändert hat",
+    "das kleine Detail, das kaum jemand bemerkt",
+    "die Stimmung zwischen den großen Ereignissen",
+    "was VOR diesem Bild passiert ist",
+    "was NACH diesem Bild passiert ist",
+    "was ich dabei gedacht habe",
+    "warum genau DIESES Bild mein Favorit ist",
+    "was der Kunde dazu gesagt hat",
+    "die größte Herausforderung bei diesem Shot",
+    "ein lustiger Moment hinter den Kulissen",
+    "das Licht, das alles perfekt gemacht hat",
+    "warum ich diesen Ort liebe",
+    "der Augenblick, den man nicht planen kann",
+    "was dieses Bild für die ganze Serie bedeutet",
   ];
 
-  const styleAssignments = Array.from({ length: count }, (_, i) => styList[i % styList.length]);
-
   const prompt = [
-    `DU BIST ${count} VERSCHIEDENE PERSONEN. Jede Person hat einen EIGENEN Schreibstil.`,
-    `Branche: ${businessLabel}. Projekt: ${project?.couple_name || project?.businessName || "Kundenprojekt"}.`,
-    `Grundtonalität: ${tone || "natürlich"}.`,
+    `Du schreibst ${count} Instagram-Captions für ${businessLabel}.`,
+    `Projekt: ${project?.couple_name || project?.businessName || "Kundenprojekt"}.`,
+    `Stil-Vorgabe: ${styleProfile || "Authentisch, persönlich, nahbar"}. Tonalität: ${tone || "natürlich"}.`,
     ``,
-    `JEDE Person schreibt GENAU EINE Instagram-Caption (80-120 Wörter + 8-10 Hashtags).`,
-    `Die Personen und ihre Stile:`,
-    ...styleAssignments.map((s, i) => `Person ${i + 1}: ${s}.`),
+    'WICHTIG: ALLE Captions klingen nach DERSELBEN Person (konsistenter Stil).',
+    'Aber JEDE Caption hat einen KOMPLETT ANDEREN INHALT und eine andere Perspektive:',
+    ...angles.slice(0, count).map((a, i) => `${i + 1}. Dein Fokus: ${a}`),
     ``,
     `BILDINFORMATIONEN:\n${imageList}`,
     ``,
-    `KRITISCHE REGELN – Bei Verstoß sind ALLE Captions ungültig:`,
-    `1. Jede Person schreibt KOMPLETT ANDERS. Wenn zwei Captions ähnlich klingen = FEHLER.`,
-    `2. KEINE Person verwendet Wörter oder Satzanfänge einer anderen Person.`,
-    `3. IMMER in ICH-Form schreiben (ich, mein, mir). NIE "wir" oder "uns".`,
-    `4. VERBOTENE Anfänge: "Inmitten", "Ein Tag", "Wenn", "Es ist", "Man".`,
-    `5. Jede Caption MUSS anders anfangen – Frage, Ausruf, Statement, Beobachtung, Zahl, Zitat…`,
-    `6. Jeder Text klingt, als hätte ihn ein ECHTER Mensch geschrieben, keine KI.`,
-    ...(styleProfile ? [`7. Zusätzlicher Stil des Accounts: ${styleProfile}`] : []),
+    `REGELN:`,
+    `- Immer ICH-Form (ich, mein, mir), niemals WIR`,
+    `- Jede Caption: 80-120 Wörter + 8-10 Hashtags`,
+    `- Keine Floskeln, keine Phrasen, kein "Inmitten von"`,
+    `- Schreib wie ein Mensch, nicht wie eine KI`,
+    `- Jede Caption klingt, als wäre das Bild gerade erst entstanden`,
     ``,
-    `AUSGABE-FORMAT:`,
-    `Caption 1: [Text Person 1]`,
-    `Caption 2: [Text Person 2]`,
-    `usw.`,
+    `Format: "Caption 1:" dann Text, "Caption 2:" dann Text, usw.`,
   ].join("\n");
 
   const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
@@ -83,14 +73,11 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           model: isDeepseek ? (process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash") : (process.env.OPENAI_MODEL ?? "gpt-5.4-mini"),
           messages: [
-            {
-              role: "system",
-              content: `Du simulierst ${count} verschiedene Personen. Jede hat einen eigenen Schreibstil. Du schreibst IMMER in der ICH-Form. Jeder Text ist einzigartig. Branche: ${businessLabel}.`
-            },
+            { role: "system", content: `Du bist Social-Media-Texter für ${businessLabel}. Dein Stil: ${styleProfile || "authentisch, persönlich"}. Du schreibst IMMER in ICH-Form. Deine Texte klingen wie von einem echten Menschen – nahbar, ehrlich, unverwechselbar.` },
             { role: "user", content: prompt },
           ],
           max_tokens: Math.min(5000, count * 500),
-          temperature: 1.3,
+          temperature: 0.9,
         }),
         signal: AbortSignal.timeout(90_000),
       }
@@ -102,10 +89,7 @@ export async function POST(request: Request) {
     const raw = payload.choices?.[0]?.message?.content ?? "";
     const captions: string[] = [];
     const parts = raw.split(/Caption \d+:/i);
-    for (const part of parts) {
-      const trimmed = part.trim();
-      if (trimmed) captions.push(trimmed);
-    }
+    for (const part of parts) { const t = part.trim(); if (t) captions.push(t); }
 
     return NextResponse.json({ captions });
   } catch (e) {
