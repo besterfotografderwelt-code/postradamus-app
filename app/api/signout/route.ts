@@ -2,7 +2,15 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { NextResponse } from "next/server";
 
+export async function GET() {
+  return handleSignOut();
+}
+
 export async function POST() {
+  return handleSignOut();
+}
+
+async function handleSignOut() {
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     await supabase.auth.signOut();

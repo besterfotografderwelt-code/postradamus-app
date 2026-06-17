@@ -3,14 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 
-function SignOutForm() {
-  return (
-    <form action="/api/signout" method="post">
-      <button className="nav-button" type="submit">Abmelden</button>
-    </form>
-  );
-}
-
 type NavMenuProps = {
   menu: Array<{ href: string; label: string; primary?: boolean; action?: "signOut" }>;
 };
@@ -38,7 +30,7 @@ export function NavMenu({ menu }: NavMenuProps) {
         <Link className="nav-home" href="/" onClick={() => setOpen(false)}>Home</Link>
         {menu.map((item) =>
           item.action === "signOut" ? (
-            <SignOutForm key="signout" />
+            <Link key="signout" href="/api/signout" className="nav-button">Abmelden</Link>
           ) : (
             <Link
               key={item.href}
