@@ -1,8 +1,17 @@
 const BASE = process.env.PAYPAL_BASE_URL ?? "https://api-m.paypal.com";
 const CLIENT_ID = process.env.PAYPAL_CLIENT_ID ?? "";
-const SECRET = process.env.PAYPAL_CLIENT_SECRET ?? "";
+const SECRET = proces…CRET ?? "";
 
-async function getAccessToken() {
+type PlanDef = { name: string; price: number; trial: boolean };
+
+const PLAN_PRICES: Record<string, PlanDef> = {
+  starter: { name: "Starter", price: 29.9, trial: true },
+  growth: { name: "Growth", price: 49.9, trial: true },
+  studio: { name: "Studio", price: 129.9, trial: true },
+  trial: { name: "Trial", price: 29.9, trial: true },
+};
+
+async function getAccessToken(): Promise<string> {
   const res = await fetch(`${BASE}/v1/oauth2/token`, {
     method: "POST",
     headers: {
@@ -12,14 +21,37 @@ async function getAccessToken() {
     body: "grant_type=client_credentials",
   });
   const data = await res.json();
-  return data.access_token as string;
+  return data.access_token;
 }
 
-const PLAN_PRICES: Record<string, { name: string; price: number }> = {
-  starter: { name: "Starter", price: 29.9 },
-  growth: { name: "Growth", price: 49.9 },
-  studio: { name: "Studio", price: 129.9 },
-};
+function buildBillingCycles(plan: PlanDef) {
+  if (plan.trial) {
+    return [
+      {
+        frequency: { interval_unit: "DAY" as const, interval_count: 14 },
+        tenure_type: "TRIAL" as const,
+        sequence: 1,
+        total_cycles: 1,
+      },
+      {
+        frequency: { interval_unit: "MONTH" as const, interval_count: 1 },
+        tenure_type: "REGULAR" as const,
+        sequence: 2,
+        total_cycles: 0,
+        pricing_scheme: { fixed_price: { value: plan.price.toFixed(2), currency_code: "EUR" } },
+      },
+    ];
+  }
+  return [
+    {
+      frequency: { interval_unit: "MONTH" as const, interval_count: 1 },
+      tenure_type: "REGULAR" as const,
+      sequence: 1,
+      total_cycles: 0,
+      pricing_scheme: { fixed_price: { value: plan.price.toFixed(2), currency_code: "EUR" } },
+    },
+  ];
+}
 
 export async function createSubscription(planId: string, returnUrl: string, cancelUrl: string) {
   const plan = PLAN_PRICES[planId];
@@ -39,21 +71,16 @@ export async function createSubscription(planId: string, returnUrl: string, canc
   });
   const product = await productRes.json();
 
-  // Create billing plan
+  // Create billing plan with optional 14-day trial
+  const billing_cycles = buildBillingCycles(plan);
   const planRes = await fetch(`${BASE}/v1/billing/plans`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       product_id: product.id,
-      name: `Postradamus ${plan.name} Monthly`,
+      name: `Postradamus ${plan.name}` + (plan.trial ? " (14 Tage gratis)" : ""),
       status: "ACTIVE",
-      billing_cycles: [{
-        frequency: { interval_unit: "MONTH", interval_count: 1 },
-        tenure_type: "REGULAR",
-        sequence: 1,
-        total_cycles: 0,
-        pricing_scheme: { fixed_price: { value: plan.price.toFixed(2), currency_code: "EUR" } },
-      }],
+      billing_cycles,
       payment_preferences: {
         auto_bill_outstanding: true,
         payment_failure_threshold: 3,

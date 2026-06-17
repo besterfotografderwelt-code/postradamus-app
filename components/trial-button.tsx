@@ -4,23 +4,31 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function TrialButton() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function start() {
     setLoading(true);
     try {
-      const res = await fetch("/api/start-trial", { method: "POST" });
+      const origin = window.location.origin;
+      const res = await fetch("/api/paypal/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: "trial",
+          returnUrl: `${origin}/kundenbereich?subscribed=true&trial=true`,
+          cancelUrl: `${origin}/preise?cancelled=true`,
+        }),
+      });
       const data = await res.json();
-      if (data.success) {
-        router.push("/projects");
+      if (data.approvalUrl) {
+        window.location.href = data.approvalUrl;
       } else if (res.status === 401) {
-        router.push("/login");
+        window.location.href = "/login?next=/preise";
       } else {
-        router.push(`/login?error=${encodeURIComponent(data.error || "Fehler")}`);
+        alert("Fehler: " + (data.error ?? "Unbekannt"));
       }
     } catch {
-      router.push("/login?error=Verbindungsfehler");
+      alert("Verbindungsfehler");
     } finally {
       setLoading(false);
     }
@@ -28,7 +36,7 @@ export function TrialButton() {
 
   return (
     <button className="button pricing-button" onClick={start} disabled={loading} type="button">
-      {loading ? "Wird gestartet …" : "14 Tage gratis testen"}
+      {loading ? "Wird geladen …" : "14 Tage gratis testen"}
     </button>
   );
 }
