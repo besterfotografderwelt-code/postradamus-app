@@ -39,7 +39,7 @@ export function NavMenu({ menu }: NavMenuProps) {
         <Link className="nav-home" href="/" onClick={() => setOpen(false)}>Home</Link>
         {menu.map((item) =>
           item.action === "signOut" ? (
-            <button key="signout" className="nav-button" type="button" onClick={handleSignOut}>Abmelden</button>
+            <Link key="signout" href="/logout" className="nav-button" onClick={() => setOpen(false)} style={{ color: "var(--error, #d32f2f)" }}>Abmelden</Link>
           ) : (
             <Link
               key={item.href}
