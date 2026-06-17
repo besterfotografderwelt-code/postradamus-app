@@ -239,7 +239,7 @@ const restaurantCaptions = [
   "Qualität merkst du beim ersten Bissen und erinnerst dich beim letzten.",
   "Küche ist kein Geheimnis, sondern Handwerk mit Herz. Bei uns kannst du zusehen.",
   "Vom Markt bis auf den Teller dauert es bei uns keine Umwege. Das schmeckt man.",
-  "Ambiente, Service, Geschmack – alles muss stimmen, damit es ein perfekter Abend wird.",
+  "Ambiente, Service, Geschmack - alles muss stimmen, damit es ein perfekter Abend wird.",
 ];
 
 const restaurantHashtags = [
@@ -498,7 +498,7 @@ function generatePostSlots(images: ProjectImage[], tone: string, businessType = 
       if (isWeddingBusiness) {
         return makeToned(
           isCTA
-            ? `Welcher Moment hat euch am meisten berührt? 💬 Schreibt es in die Kommentare – wir sind gespannt, welches Bild euch sofort wieder ins Gefühl von diesem Tag zurückholt.`
+            ? `Welcher Moment hat euch am meisten berührt? 💬 Schreibt es in die Kommentare - wir sind gespannt, welches Bild euch sofort wieder ins Gefühl von diesem Tag zurückholt.`
             : imgTags.includes("Trauung")
               ? `Wenn aus einem Ja-Wort tausend Erinnerungen werden, entsteht genau diese Art von Bild. Echt, nah und voller Bedeutung, damit der Moment später wieder ganz präsent wird. ${imgName}.`
               : imgTags.includes("Paarshooting")
@@ -520,7 +520,7 @@ function generatePostSlots(images: ProjectImage[], tone: string, businessType = 
       if (normalizedBusinessType === "fitness") {
         return makeToned(
           isCTA
-            ? `Welches Training hat dich diese Woche am meisten gefordert? 💬 Schreib es in die Kommentare – wir wollen wissen, wo du an deine Grenzen gehst.`
+            ? `Welches Training hat dich diese Woche am meisten gefordert? 💬 Schreib es in die Kommentare - wir wollen wissen, wo du an deine Grenzen gehst.`
             : imgTags.includes("Workout")
               ? `Training, das sich lohnt, sieht man. Und spürt man erst recht. Heute wieder alles gegeben. 🔥`
               : imgTags.includes("Transformation")
@@ -540,7 +540,7 @@ function generatePostSlots(images: ProjectImage[], tone: string, businessType = 
       if (normalizedBusinessType === "restaurant") {
         return makeToned(
           isCTA
-            ? `Was war dein letztes richtiges Geschmackserlebnis? 💬 Schreib es in die Kommentare – wir lieben kulinarische Inspiration.`
+            ? `Was war dein letztes richtiges Geschmackserlebnis? 💬 Schreib es in die Kommentare - wir lieben kulinarische Inspiration.`
             : imgTags.includes("Gerichte")
               ? `Frisch zubereitet, ehrlich angerichtet und mit genau dem Geschmack, der bleibt. Heute wieder mit Liebe gekocht.`
               : imgTags.includes("Interior")
@@ -556,7 +556,7 @@ function generatePostSlots(images: ProjectImage[], tone: string, businessType = 
       if (normalizedBusinessType === "produktfotograf") {
         return makeToned(
           isCTA
-            ? `Welches Detail fällt dir als Erstes auf? 💬 Schreib es in die Kommentare – wir sind gespannt auf deinen Blick.`
+            ? `Welches Detail fällt dir als Erstes auf? 💬 Schreib es in die Kommentare - wir sind gespannt auf deinen Blick.`
             : imgTags.includes("Detail")
               ? `Auf den zweiten Blick entscheidet sich Qualität. Deshalb zeigen wir, was nicht sofort sichtbar ist.`
               : imgTags.includes("Weißer Hintergrund")
@@ -570,7 +570,7 @@ function generatePostSlots(images: ProjectImage[], tone: string, businessType = 
       // generic
       return makeToned(
         isCTA
-          ? `Was nimmst du aus diesem Einblick mit? 💬 Schreib es in die Kommentare – deine Perspektive interessiert uns.`
+          ? `Was nimmst du aus diesem Einblick mit? 💬 Schreib es in die Kommentare - deine Perspektive interessiert uns.`
           : imgTags.includes("Team")
             ? `Menschen machen den Unterschied. Hier sieht man, wer mit Leidenschaft dabei ist.`
             : imgTags.includes("Detail") || imgTags.includes("Details")
@@ -658,6 +658,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   const [imageOverrides, setImageOverrides] = useState<Record<string, ProjectImage[]>>({});
   const [cropPositions, setCropPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [hiddenPosts, setHiddenPosts] = useState<Set<string>>(new Set());
+  const [batchGenerating, setBatchGenerating] = useState(false);
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [analyzedSlots, setAnalyzedSlots] = useState<Record<string, AnalyzedSlotContent>>({});
   const [slotTones, setSlotTones] = useState<Record<string, string>>({});
@@ -829,9 +830,43 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
         </div>
       </div>
 
-      <div className="plan-edit-hint">
-        <strong>Jeder Post bleibt bearbeitbar.</strong>
-        <span>Über „Bearbeiten“ kannst du Caption, Stil, markierte Accounts, Hashtags, Bildbeschnitt und Bildauswahl ändern.</span>
+      <div className="plan-edit-hint" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <strong>Jeder Post bleibt bearbeitbar.</strong>
+          <span>Über „Bearbeiten" kannst du Caption, Stil, markierte Accounts, Hashtags, Bildbeschnitt und Bildauswahl ändern.</span>
+        </div>
+        <button
+          className="button"
+          disabled={!!batchGenerating}
+          onClick={async () => {
+            setBatchGenerating(true);
+            try {
+              const res = await fetch("/api/generate/batch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  images: images.slice(0, 30),
+                  project: { couple_name: images[0]?.filename ?? "Projekt", businessName: businessType },
+                  tone,
+                  businessType,
+                  styleProfile,
+                }),
+              });
+              const data = await res.json();
+              if (data.captions?.length) {
+                const updated: Record<string, string> = {};
+                filteredSlots.forEach((slot, i) => {
+                  if (data.captions[i]) updated[slot.id] = data.captions[i];
+                });
+                setEditedCaptions(prev => ({ ...prev, ...updated }));
+              }
+            } catch { /* ignore */ }
+            finally { setBatchGenerating(false); }
+          }}
+          type="button"
+        >
+          {batchGenerating ? "Generiere …" : "🤖 KI-Captions generieren"}
+        </button>
       </div>
 
       <div className="feed-grid">
