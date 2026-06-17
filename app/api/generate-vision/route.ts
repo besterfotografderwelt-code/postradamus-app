@@ -143,12 +143,12 @@ export async function POST(request: Request) {
     const captionRes = await callOpenAI(TEXT_MODEL, [
       {
         role: "system",
-        content: `Du schreibst Instagram-Captions in ICH-Form. Du bist die Person die den Moment erlebt hat. Schreib NICHT als Beobachter von außen. Authentisch. Direkt. Nahbar.${onBoardingString ? ` STIL: ${onBoardingString}` : ""}`
+        content: `Du schreibst Instagram-Captions für einen Fotografen. Der Fotograf hat das Bild aufgenommen. Schreibe aus Perspektive des Fotografen (er/sie-Beschreibung, nie Ich-Form). Authentisch. Direkt. Kein Kitsch.${onBoardingString ? ` STIL: ${onBoardingString}` : ""}`
       },
       {
         role: "user",
         content: [
-          `Schreibe eine Instagram-Caption (ICH-Form, 80-120 Wörter + 8-10 Hashtags).`,
+          `Schreibe eine Instagram-Caption (80-120 Wörter + 8-10 Hashtags). Perspektive: Fotograf beschreibt den Moment. Keine Ich-Form.`,
           ``,
           `BILDANALYSE: ${JSON.stringify(analysis)}`,
           `STRATEGIE: ${strategy.desc}`,
