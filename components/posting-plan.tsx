@@ -758,7 +758,11 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
           });
           const data = await res.json();
           if (data.content && !cancelled) {
-            setEditedCaptions((prev) => ({ ...prev, [slot.id]: data.content }));
+            // Lock caption – never overwrite once set
+            setEditedCaptions((prev) => {
+              if (prev[slot.id]) return prev; // Already set, don't touch
+              return { ...prev, [slot.id]: data.content };
+            });
             const opening = data.content.split(/[.!?]/)[0].trim().toLowerCase();
             if (opening) generatedOpenings.push(opening);
           }
