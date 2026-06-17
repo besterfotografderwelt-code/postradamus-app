@@ -17,6 +17,9 @@ export type Database = {
           instagram_handle: string;
           tone_of_voice: string;
           language_preference: Database["public"]["Enums"]["project_language"];
+          plan: string;
+          trial_start: string | null;
+          trial_end: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -27,6 +30,9 @@ export type Database = {
           instagram_handle?: string;
           tone_of_voice?: string;
           language_preference?: Database["public"]["Enums"]["project_language"];
+          plan?: string;
+          trial_start?: string | null;
+          trial_end?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -155,7 +161,12 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      start_trial: {
+        Args: { pid: string };
+        Returns: boolean;
+      };
+    };
     Enums: {
       project_language: "DE" | "EN";
       project_status: "brief" | "selection" | "sneak-peek" | "copy" | "export";
