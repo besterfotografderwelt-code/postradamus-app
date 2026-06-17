@@ -104,7 +104,7 @@ export async function POST(request: Request) {
   // Demo mode override
   if (process.env.WEDDINGFLOW_AI_MODE === "demo") {
     return NextResponse.json({
-      content: generateDemoContent(body.type ?? "instagram_caption", { ...body.context, extraInstructions: body.context?.extraInstructions ?? "", project: body.context?.project ?? { id: "demo", couple_name: "Demo" }, favoriteCount: body.context?.favoriteCount ?? 0, tags: body.context?.tags ?? [] }),
+      content: generateDemoContent((body.type ?? "instagram_caption") as ProjectOutputType, body.context as GenerationContext),
       generator: "demo"
     });
   }
