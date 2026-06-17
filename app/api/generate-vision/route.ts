@@ -45,9 +45,15 @@ export async function POST(request: Request) {
     const payload = await response.json() as { error?: { message?: string }; choices?: Array<{ message?: { content?: string } }> };
     if (!response.ok) throw new Error(payload?.error?.message ?? "API-Fehler");
 
-    const content = payload.choices?.[0]?.message?.content?.trim();
-    if (!content) throw new Error("Leere Antwort");
+    const raw = payload.choices?.[0]?.message?.content?.trim() ?? "";
+    if (!raw) throw new Error("Leere Antwort");
 
+    // Strip any image description prefix the model might have added
+    const cleaned = raw
+      .replace(/^.*?(?:Auf diesem Bild|Auf dem Bild|In diesem Bild|Das Bild zeigt|Ich sehe|Man sieht).*?[.:]\s*/gi, "")
+      .trim();
+
+    const content = cleaned || raw;
     return NextResponse.json({ content, generator: "openai-vision" });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
