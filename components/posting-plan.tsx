@@ -699,49 +699,45 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
 
-  // Auto-generate KI-Captions – JEDER Post ein EIGENER API-Call
+  // Auto-generate KI-Captions via GPT-4o-mini Vision – KI SIEHT jedes Bild
   useEffect(() => {
     const validSlots = filteredSlots.filter((s) => s.type !== "story" && s.type !== "reel");
     if (validSlots.length === 0 || !images.length) return;
     let cancelled = false;
 
-    const angles = [
-      "der entscheidende Moment, der alles verändert hat",
-      "das kleine Detail, das kaum jemand bemerkt hat",
-      "die Stimmung zwischen den großen Ereignissen",
-      "was VOR diesem Moment passiert ist",
-      "was NACH diesem Moment passiert ist",
-      "warum genau DIESES Bild mein Favorit ist",
-      "was der Kunde beim Anblick gesagt hat",
-      "die größte Herausforderung bei diesem Shot",
-      "ein lustiger Moment hinter den Kulissen",
-      "das Licht, das alles perfekt gemacht hat",
-      "warum ich diesen Ort dafür ausgewählt habe",
-      "der Augenblick, den man nicht planen kann",
-      "was dieses Bild für die ganze Serie bedeutet",
-      "mein erster Gedanke als ich das Bild sah",
-    ];
+    async function imageToBase64(img: { thumbnailUrl: string }): Promise<string | null> {
+      try {
+        const res = await fetch(img.thumbnailUrl);
+        const blob = await res.blob();
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        return null;
+      }
+    }
 
     async function generate() {
       for (let i = 0; i < validSlots.length; i++) {
         if (cancelled) return;
         const slot = validSlots[i];
         const img = slot.images[0];
-        const angle = angles[i % angles.length];
+        if (!img?.thumbnailUrl) continue;
+
+        const base64 = await imageToBase64(img);
+        if (!base64) continue;
+
         try {
-          const res = await fetch("/api/generate", {
+          const res = await fetch("/api/generate-vision", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              type: "instagram_caption",
-              context: {
-                project: { id: img?.id ?? img?.name ?? "project", couple_name: img?.name ?? "Projekt", businessType },
-                favoriteCount: 1,
-                tags: img?.tags ?? [],
-                thumbnailUrl: img?.thumbnailUrl || undefined,
-                extraInstructions: `Tonalität: ${tone || "natürlich"}. Dein Fokus: ${angle}.`,
-                styleProfile: styleProfile || undefined,
-              },
+              imageBase64: base64,
+              extraInstructions: tone ? `Tonalität: ${tone}. ICH-Form. Keine Floskeln.` : "ICH-Form. Keine Floskeln.",
+              styleProfile: styleProfile || undefined,
+              businessType,
             }),
           });
           if (cancelled) return;
