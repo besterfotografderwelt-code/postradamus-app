@@ -7,7 +7,28 @@ type RetoneRequest = {
   tone: string;
   businessType: string;
   styleProfile?: string;
+  previousCaptions?: string[];
+  variationIndex?: number;
+  includeCta?: boolean;
 };
+
+const variationInstructions = [
+  "Beginne mit einer konkreten Beobachtung, nicht mit einer Frage.",
+  "Beginne mit einer kurzen, unerwarteten Aussage und variiere die Satzlängen.",
+  "Beginne mit einer natürlichen Frage an die Community.",
+  "Erzähle eine kleine Szene mit Handlung statt einer allgemeinen Stimmung.",
+  "Beginne mit einem konkreten Detail und leite daraus einen Gedanken ab.",
+  "Baue die Caption als Kontrast auf.",
+  "Steige ohne Einleitung mitten in die Handlung ein."
+];
+
+function personalStyleInstruction(body: RetoneRequest) {
+  if (!body.styleProfile) return "";
+  const authentic = body.tone.trim().toLowerCase() === "authentisch";
+  return authentic
+    ? `VERBINDLICHER PERSÖNLICHER SCHREIBSTIL: ${body.styleProfile}. Bei AUTHENTISCH hat dieser Onboarding-Stil Vorrang.`
+    : `Persönlicher Stil als sekundäre Leitlinie: ${body.styleProfile}`;
+}
 
 function readLocalEnvValue(name: string): string {
   const fromProcess = process.env[name]?.trim();
@@ -82,11 +103,22 @@ export async function POST(request: Request) {
   const prompt = [
     `Branche: ${branche}`,
     `Tonalität: ${ti}`,
-    ...(body.styleProfile ? [`Stil des Nutzers: ${body.styleProfile}`] : []),
+    personalStyleInstruction(body),
+    variationInstructions[Math.abs(body.variationIndex ?? 0) % variationInstructions.length],
+    body.includeCta
+      ? "Beende mit einem kurzen, natürlichen CTA, der zum Inhalt passt."
+      : "Beende ohne CTA mit einem eigenständigen Gedanken.",
     "",
     "Du bekommst eine Bildbeschreibung. Schreibe daraus eine komplett neue Instagram-Caption im angegebenen Ton.",
     "Die neue Tonalität muss in Wortwahl, Satzlänge, Rhythmus und Haltung klar anders erkennbar sein.",
     "Übernimm keine Formulierungen aus einer vorherigen Caption und vermeide generische Einstiege.",
+    "Vermeide Floskeln wie „inmitten von“, „mehr als nur“, „genau solche“, „magischer Moment“ und „für die Ewigkeit“.",
+    ...((body.previousCaptions ?? []).length > 0
+      ? [
+          "Bereits erzeugte Captions – keine Formulierungen oder Satzmuster daraus wiederverwenden:",
+          ...(body.previousCaptions ?? []).slice(-6).map((caption, index) => `${index + 1}. ${caption}`)
+        ]
+      : []),
     "Keine Fotografie-Sprache! Schreibe aus Unternehmenssicht.",
     "Die Caption soll 50 bis 90 Wörter haben.",
     "Gib 8 bis 14 passende Hashtags zurück.",

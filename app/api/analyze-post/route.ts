@@ -18,6 +18,9 @@ type AnalyzeMetadata = {
   slotDescription?: string;
   images?: ImageMetadata[];
   styleProfile?: string;
+  previousCaptions?: string[];
+  variationIndex?: number;
+  includeCta?: boolean;
 };
 
 type AnalyzeResult = {
@@ -77,6 +80,77 @@ function readChatCompletionText(payload: unknown): string {
   };
   const content = response.choices?.[0]?.message?.content;
   return typeof content === "string" ? content.trim() : "";
+}
+
+const variationInstructions = [
+  "Aufbau: Starte mit einer konkreten Beobachtung aus der Szene. Keine Frage als Einstieg.",
+  "Aufbau: Starte direkt und knapp mit einer unerwarteten Aussage. Verwende kurze, klare Sätze.",
+  "Aufbau: Beginne mit einer natürlichen Frage an die Community und beantworte sie im Text nicht sofort.",
+  "Aufbau: Erzähle eine kleine Mini-Szene mit Handlung, statt die Stimmung allgemein zu beschreiben.",
+  "Aufbau: Beginne mit einem konkreten Detail und leite daraus einen Gedanken oder Mehrwert ab.",
+  "Aufbau: Nutze einen Kontrast, etwa vorher/nachher, ruhig/lebendig oder Detail/Gesamtwirkung.",
+  "Aufbau: Steige ohne Einleitung mitten in eine Handlung oder einen Gedanken ein."
+];
+
+const clichéPhrases = [
+  "inmitten von",
+  "mehr als nur",
+  "genau solche",
+  "magischer moment",
+  "unvergesslicher moment",
+  "sagt mehr als tausend worte",
+  "für die ewigkeit",
+  "kleinen momente",
+  "besondere augenblicke"
+];
+
+function normalizedCaption(value: string) {
+  return value.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+}
+
+function findRepeatedPhrases(candidate: string, previousCaptions: string[]): string[] {
+  const normalized = normalizedCaption(candidate);
+  const repeated = clichéPhrases.filter((phrase) =>
+    normalized.includes(phrase) &&
+    previousCaptions.some((previous) => normalizedCaption(previous).includes(phrase))
+  );
+
+  const words = normalized.split(" ");
+  for (let size = 4; size >= 2; size--) {
+    for (let index = 0; index <= words.length - size; index++) {
+      const phrase = words.slice(index, index + size).join(" ");
+      if (phrase.length < 12) continue;
+      if (previousCaptions.some((previous) => normalizedCaption(previous).includes(phrase))) {
+        repeated.push(phrase);
+      }
+      if (repeated.length >= 6) return Array.from(new Set(repeated));
+    }
+  }
+  return Array.from(new Set(repeated));
+}
+
+function styleInstruction(metadata: AnalyzeMetadata) {
+  const authentic = (metadata.tone || "authentisch").trim().toLowerCase() === "authentisch";
+  if (!metadata.styleProfile) return "";
+  return authentic
+    ? `VERBINDLICHER PERSÖNLICHER SCHREIBSTIL: ${metadata.styleProfile}. Dieser Onboarding-Stil hat bei AUTHENTISCH Vorrang vor allgemeinen Standardformulierungen.`
+    : `Persönlicher Schreibstil als sekundäre Leitlinie: ${metadata.styleProfile}`;
+}
+
+function diversityInstructions(metadata: AnalyzeMetadata) {
+  const previous = (metadata.previousCaptions ?? []).filter(Boolean).slice(-6);
+  const variation = variationInstructions[Math.abs(metadata.variationIndex ?? 0) % variationInstructions.length];
+  return [
+    variation,
+    metadata.includeCta
+      ? "Beende die Caption mit einem kurzen, natürlichen CTA: einer passenden Frage, Einladung zum Kommentieren, Speichern oder Kontaktaufnehmen."
+      : "Kein CTA am Ende; schließe mit einem eigenständigen Gedanken.",
+    "Verwende keine Formulierung oder Satzstruktur aus den bereits erzeugten Captions erneut.",
+    "Vermeide insbesondere Floskeln wie „inmitten von“, „mehr als nur“, „genau solche“, „magischer Moment“ und „für die Ewigkeit“.",
+    ...(previous.length > 0
+      ? ["Bereits erzeugte Captions – sprachlich deutlich davon abgrenzen:", ...previous.map((caption, index) => `${index + 1}. ${caption}`)]
+      : [])
+  ];
 }
 
 function fallbackFromMetadata(metadata: AnalyzeMetadata): AnalyzeResult {
@@ -142,7 +216,8 @@ async function generateDeepSeekMetadataFallback(
     `Tonalität: ${metadata.tone || "authentisch"}`,
     `Post-Typ: ${metadata.slotType || "single"}`,
     `Inhaltlicher Winkel: ${metadata.slotDescription || metadata.slotId || "passend zum sichtbaren Motiv"}`,
-    ...(metadata.styleProfile ? [`Schreibstil des Nutzers: ${metadata.styleProfile}`] : []),
+    styleInstruction(metadata),
+    ...diversityInstructions(metadata),
     `Bildmetadaten: ${JSON.stringify(metadata.images ?? [])}`,
     `Fallback-Grund: ${reason}`
   ].join("\n");
@@ -264,62 +339,73 @@ async function analyzeWithOpenAIVision(
     `Branche: ${branche}`,
     `Post-Typ: ${metadata.slotType || "single"}`,
     `Inhaltlicher Winkel: ${metadata.slotDescription || metadata.slotId || "passend zum sichtbaren Motiv"}`,
-    ...(metadata.styleProfile ? [`Stil des Nutzers: ${metadata.styleProfile}`] : []),
+    styleInstruction(metadata),
     "",
     "Schreibe eine Instagram-Caption, die zum sichtbaren Bildinhalt und zur Branche passt.",
     "Die gewählte Tonalität muss in Wortwahl, Satzlänge, Rhythmus und Haltung deutlich erkennbar sein.",
     "Vermeide austauschbare Einstiege und allgemeine Social-Media-Floskeln.",
     "Nutze mindestens zwei konkrete sichtbare Details, damit sich die Caption klar von anderen Posts unterscheidet.",
+    ...diversityInstructions(metadata),
     "Keine Fotografie-Sprache! Schreibe aus Unternehmenssicht.",
     'Antworte AUSSCHLIESSLICH mit diesem JSON:',
     '{"caption": "...", "hashtags": "#tag1 #tag2 ...", "summary": "was sichtbar ist"}'
   ].join("\n");
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: userPrompt },
-            ...imageContents
-          ]
-        }
-      ],
-      max_tokens: 600,
-      temperature: 0.9,
-      response_format: { type: "json_object" }
-    }),
-    signal: AbortSignal.timeout(25_000)
-  });
+  let repeatedPhrases: string[] = [];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const correction = attempt === 1
+      ? `WICHTIGE KORREKTUR: Formuliere vollständig neu. Diese Wiederholungen wurden erkannt und dürfen nicht vorkommen: ${repeatedPhrases.join(", ")}.`
+      : "";
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: [userPrompt, correction].filter(Boolean).join("\n\n") },
+              ...imageContents
+            ]
+          }
+        ],
+        max_tokens: 600,
+        temperature: 1,
+        response_format: { type: "json_object" }
+      }),
+      signal: AbortSignal.timeout(25_000)
+    });
 
-  const payload: unknown = await response.json();
-  if (!response.ok) {
-    const err = payload as { error?: { message?: string } };
-    throw new Error(err.error?.message || "OpenAI Vision fehlgeschlagen.");
+    const payload: unknown = await response.json();
+    if (!response.ok) {
+      const err = payload as { error?: { message?: string } };
+      throw new Error(err.error?.message || "OpenAI Vision fehlgeschlagen.");
+    }
+
+    const content = readChatCompletionText(payload);
+    const parsed = safeJsonParse<Partial<AnalyzeResult> & { hashtags?: unknown }>(content);
+    const hashtags = normalizeHashtags(parsed?.hashtags);
+    if (!parsed?.caption || !hashtags) {
+      throw new Error("OpenAI Vision hat keine verwertbare Caption geliefert.");
+    }
+
+    repeatedPhrases = findRepeatedPhrases(parsed.caption, metadata.previousCaptions ?? []);
+    if (repeatedPhrases.length === 0 || attempt === 1) {
+      return {
+        caption: parsed.caption.trim(),
+        hashtags,
+        summary: parsed.summary?.trim() || "Bildanalyse abgeschlossen.",
+        generator: "openai-vision"
+      };
+    }
   }
 
-  const content = readChatCompletionText(payload);
-  const parsed = safeJsonParse<Partial<AnalyzeResult> & { hashtags?: unknown }>(content);
-  const hashtags = normalizeHashtags(parsed?.hashtags);
-
-  if (!parsed?.caption || !hashtags) {
-    throw new Error("OpenAI Vision hat keine verwertbare Caption geliefert.");
-  }
-
-  return {
-    caption: parsed.caption.trim(),
-    hashtags,
-    summary: parsed.summary?.trim() || "Bildanalyse abgeschlossen.",
-    generator: "openai-vision"
-  };
+  throw new Error("OpenAI Vision hat keine ausreichend variable Caption geliefert.");
 }
 
 export async function POST(request: Request) {

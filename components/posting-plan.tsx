@@ -98,6 +98,8 @@ async function analyzePostSlot(
   tone: string,
   businessType: string,
   styleProfile?: string,
+  previousCaptions: string[] = [],
+  variationIndex = 0,
   signal?: AbortSignal
 ) {
   const formData = new FormData();
@@ -113,6 +115,9 @@ async function analyzePostSlot(
     slotType: slot.type,
     slotDescription: slot.description,
     styleProfile: styleProfile || "",
+    previousCaptions,
+    variationIndex,
+    includeCta: variationIndex % 3 === 2,
     images: images.map((image) => ({
       id: image.id,
       name: image.name,
@@ -138,12 +143,22 @@ async function regenerateCaptionForTone(
   tone: string,
   businessType: string,
   styleProfile?: string,
+  previousCaptions: string[] = [],
+  variationIndex = 0,
   signal?: AbortSignal
 ): Promise<{ caption: string; hashtags: string } | null> {
   const response = await fetch("/api/retone", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ summary, tone: tone || "authentisch", businessType, styleProfile }),
+    body: JSON.stringify({
+      summary,
+      tone: tone || "authentisch",
+      businessType,
+      styleProfile,
+      previousCaptions,
+      variationIndex,
+      includeCta: variationIndex % 3 === 2
+    }),
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12_000)]) : AbortSignal.timeout(12_000)
   });
   if (!response.ok) return null;
@@ -677,7 +692,20 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   const styleProfile = useMemo(() => {
     try {
       const raw = localStorage.getItem("flowstream.onboarding");
-      if (raw) return JSON.parse(raw).styleProfile?.promptAddition || "";
+      if (raw) {
+        const profile = JSON.parse(raw).styleProfile;
+        if (!profile) return "";
+        return [
+          profile.promptAddition,
+          profile.tone && `Grundton: ${profile.tone}`,
+          profile.sentenceStyle && `Satzbau: ${profile.sentenceStyle}`,
+          profile.address && `Anrede: ${profile.address}`,
+          profile.emojiDensity && `Emojis: ${profile.emojiDensity}`,
+          profile.opener && `Einstiege: ${profile.opener}`,
+          profile.closer && `Abschlüsse: ${profile.closer}`,
+          profile.traits && `Eigenschaften: ${profile.traits}`
+        ].filter(Boolean).join(". ");
+      }
     } catch {}
     return "";
   }, []);
@@ -772,6 +800,12 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
 
     // Process ONE slot at a time to avoid rate limiting
     const { slot, effectiveImages, key, effectiveTone } = pending[0];
+    const variationIndex = filteredSlots.findIndex((candidate) => candidate.id === slot.id);
+    const previousCaptions = filteredSlots
+      .filter((candidate) => candidate.id !== slot.id)
+      .map((candidate) => analyzedSlots[candidate.id]?.caption)
+      .filter((caption): caption is string => Boolean(caption))
+      .slice(-6);
 
     const run = async () => {
       try {
@@ -779,7 +813,15 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
         const prevAnalyzed = analyzedSlots[slot.id];
         const prevSummary = prevAnalyzed?.summary;
         if (prevSummary && prevAnalyzed?.key !== key) {
-          const result = await regenerateCaptionForTone(prevSummary, effectiveTone, businessType, styleProfile, controller.signal);
+          const result = await regenerateCaptionForTone(
+            prevSummary,
+            effectiveTone,
+            businessType,
+            styleProfile,
+            previousCaptions,
+            variationIndex,
+            controller.signal
+          );
           if (result) {
             if (cancelled) return;
             setAnalyzedSlots((current) => ({
@@ -791,7 +833,16 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
           // Fallback: full analysis if retone fails
         }
 
-        const result = await analyzePostSlot(slot, effectiveImages, effectiveTone, businessType, styleProfile, controller.signal);
+        const result = await analyzePostSlot(
+          slot,
+          effectiveImages,
+          effectiveTone,
+          businessType,
+          styleProfile,
+          previousCaptions,
+          variationIndex,
+          controller.signal
+        );
         if (cancelled) return;
         setAnalyzedSlots((current) => ({
           ...current,

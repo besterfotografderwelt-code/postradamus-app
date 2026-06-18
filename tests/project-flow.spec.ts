@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-async function seedOnboarding(page: Page) {
+async function seedOnboarding(page: Page, withStyleProfile = false) {
   await page.addInitScript(() => {
     window.localStorage.setItem(
       "flowstream.onboarding",
@@ -8,10 +8,27 @@ async function seedOnboarding(page: Page) {
         businessType: "sonstiges",
         businessName: "Teststudio",
         tags: ["Studio", "Outdoor", "Business", "Detail", "Team", "Projekt"],
-        completed: true
+        completed: true,
+        styleProfile: undefined
       })
     );
   });
+  if (withStyleProfile) {
+    await page.addInitScript(() => {
+      const current = JSON.parse(window.localStorage.getItem("flowstream.onboarding") ?? "{}");
+      current.styleProfile = {
+        tone: "direkt",
+        sentenceStyle: "kurze Sätze",
+        address: "Du-Anrede",
+        emojiDensity: "sparsam",
+        opener: "mit klarer Aussage",
+        closer: "gelegentlich mit Frage",
+        traits: "direkt, bodenständig, persönlich",
+        promptAddition: "Schreibe direkt, bodenständig und persönlich. Nutze kurze Sätze und Du-Anrede."
+      };
+      window.localStorage.setItem("flowstream.onboarding", JSON.stringify(current));
+    });
+  }
 }
 
 test("Login zeigt ohne Supabase-Konfiguration den Demo-Modus", async ({ page }) => {
@@ -214,7 +231,7 @@ test("Demo-Content wird erzeugt und der Postingplan wird angezeigt", async ({ pa
 });
 
 test("Caption wird nur einmal erzeugt und reagiert auf Stilwechsel", async ({ page }) => {
-  await seedOnboarding(page);
+  await seedOnboarding(page, true);
 
   const analyzeRequests: string[] = [];
   const retoneRequests: string[] = [];
@@ -227,9 +244,10 @@ test("Caption wird nur einmal erzeugt und reagiert auf Stilwechsel", async ({ pa
     const body = route.request().postData() ?? "";
     analyzeRequests.push(body);
     const isFunny = body.includes('"tone":"lustig"');
+    const requestNumber = analyzeRequests.length;
     await route.fulfill({
       json: {
-        caption: isFunny ? "Lustige Test-Caption 😄" : "Authentische Test-Caption",
+        caption: isFunny ? "Lustige Test-Caption 😄" : `Authentische Test-Caption ${requestNumber}`,
         hashtags: "#eins #zwei #drei #vier #fuenf #sechs #sieben #acht",
         summary: "Testmotiv",
         generator: "openai-vision"
@@ -260,15 +278,26 @@ test("Caption wird nur einmal erzeugt und reagiert auf Stilwechsel", async ({ pa
     context.fillRect(0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg", 0.9).split(",")[1];
   });
-  await page.locator('input[type="file"]').setInputFiles({
-    name: "caption-test.jpg",
-    mimeType: "image/jpeg",
-    buffer: Buffer.from(imageBase64, "base64")
-  });
+  await page.locator('input[type="file"]').setInputFiles(
+    Array.from({ length: 7 }, (_, index) => ({
+      name: `caption-test-${index + 1}.jpg`,
+      mimeType: "image/jpeg",
+      buffer: Buffer.from(imageBase64, "base64")
+    }))
+  );
 
   await page.getByRole("button", { name: "Authentisch" }).click();
-  await expect(page.getByText("Authentische Test-Caption").first()).toBeVisible();
-  expect(analyzeRequests.length).toBeGreaterThan(0);
+  await expect(page.getByText("Authentische Test-Caption 1").first()).toBeVisible();
+  await expect.poll(() => analyzeRequests.length).toBeGreaterThanOrEqual(3);
+  expect(analyzeRequests.some((body) =>
+    body.includes("VERBINDLICHER") ||
+    body.includes("direkt, bodenständig und persönlich")
+  )).toBe(true);
+  expect(analyzeRequests.some((body) =>
+    body.includes("previousCaptions") &&
+    body.includes("Authentische Test-Caption")
+  )).toBe(true);
+  expect(analyzeRequests.some((body) => body.includes('"includeCta":true'))).toBe(true);
   expect(legacyVisionRequests).toBe(0);
 
   await page.getByRole("button", { name: "Lustig" }).first().click();
