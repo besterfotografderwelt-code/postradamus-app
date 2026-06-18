@@ -233,10 +233,9 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
       </section>
 
       <section className="workflow-step">
-        <div className="step-number">1</div>
         <div className="step-content">
           <div>
-            <h2>Bilder hinzufügen</h2>
+            <h2><span className="step-number">1</span>Bilder hinzufügen</h2>
             <p>Wähle deine JPGs für dieses Projekt aus.</p>
           </div>
 
