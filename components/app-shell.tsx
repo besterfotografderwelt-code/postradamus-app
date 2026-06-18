@@ -21,10 +21,7 @@ export async function AppShell({ children }: AppShellProps) {
     { href: "/kundenbereich", label: "Kundenbereich" },
     { href: "/faq", label: "FAQ" },
     { href: "/kontakt", label: "Kontakt" },
-    ...(user ? [] : [{ href: "/login", label: "Login", primary: true }]),
-    ...(user
-      ? [{ href: "/projects", label: "Projekte", primary: true }]
-      : []),
+    ...(user ? [{ href: "/projects", label: "Projekte", primary: true }] : [{ href: "/login", label: "Login", primary: true }]),
   ];
 
   return (
@@ -34,12 +31,7 @@ export async function AppShell({ children }: AppShellProps) {
           <Image className="brand-logo" src="/brand/postradamus-mark.png" alt="" width={219} height={256} aria-hidden="true" />
           <strong>Postradamus</strong>
         </Link>
-        <NavMenu links={navLinks} />
-        {user && (
-          <form action="/api/signout" method="get">
-            <button className="nav-button" type="submit">Abmelden</button>
-          </form>
-        )}
+        <NavMenu links={navLinks} signOut={!!user} />
       </header>
 
       <main>{children}</main>

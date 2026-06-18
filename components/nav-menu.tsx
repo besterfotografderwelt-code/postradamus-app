@@ -5,9 +5,10 @@ import { useState } from "react";
 
 type NavMenuProps = {
   links: Array<{ href: string; label: string; primary?: boolean }>;
+  signOut?: boolean;
 };
 
-export function NavMenu({ links }: NavMenuProps) {
+export function NavMenu({ links, signOut }: NavMenuProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -38,6 +39,11 @@ export function NavMenu({ links }: NavMenuProps) {
             {item.label}
           </Link>
         ))}
+        {signOut ? (
+          <form action="/api/signout" method="get">
+            <button className="nav-button" type="submit" onClick={() => setOpen(false)}>Abmelden</button>
+          </form>
+        ) : null}
       </nav>
     </>
   );
