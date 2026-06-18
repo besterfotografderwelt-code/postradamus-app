@@ -4,7 +4,7 @@ const faqGroups = [
     items: [
       {
         question: "Für wen ist Postradamus gedacht?",
-        answer: "Für Selbstständige, Fotografen, Studios und lokale Marken, die regelmäßig auf Instagram sichtbar sein wollen, ohne jeden Post neu von null zu planen."
+        answer: "Für alle, die mehr aus ihrem Instagram-Account machen wollen – ganz egal ob Creator, Business, Verein oder privat. Postradamus nimmt dir die Planungsarbeit ab, damit du regelmäßig posten kannst, ohne dich um Captions, Hashtags oder den perfekten Rhythmus kümmern zu müssen."
       },
       {
         question: "Muss ich Social Media gut können?",

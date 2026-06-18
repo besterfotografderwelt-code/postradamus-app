@@ -20,7 +20,7 @@ const pricingPlans = [
   {
     name: "Growth",
     price: "49,90 €",
-    description: "Für Selbstständige und Studios mit aktivem Content-Rhythmus.",
+    description: "Für alle mit regelmäßigem Content-Rhythmus – Creator, Selbstständige, Teams.",
     quota: "150 Bilder pro Monat",
     highlights: [
       "Alles aus Starter",
