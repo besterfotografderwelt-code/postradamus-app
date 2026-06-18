@@ -192,10 +192,9 @@ export function ContentStudio({ project, images, onFirstOutput }: ContentStudioP
   return (
     <>
       <section className={`workflow-step ${images.length === 0 ? "is-muted" : ""}`}>
-        <div className="step-number">2</div>
         <div className="step-content">
           <div>
-            <h2>Text erstellen</h2>
+            <h2><span className="step-number">2</span>Text erstellen</h2>
             <p>Wähle deinen Lieblingsstil.</p>
           </div>
           <div className="content-empty content-style-step">
@@ -224,10 +223,9 @@ export function ContentStudio({ project, images, onFirstOutput }: ContentStudioP
       </section>
 
       <section className={`workflow-step ${!output ? "is-muted" : ""}`}>
-        <div className="step-number">3</div>
         <div className="step-content">
           <div>
-            <h2>Postingplan</h2>
+            <h2><span className="step-number">3</span>Postingplan</h2>
             <p>Lege fest, wie oft gepostet wird und prüfe die vorbereiteten Beiträge.</p>
           </div>
           {output ? (
