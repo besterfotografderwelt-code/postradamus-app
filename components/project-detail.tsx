@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { UncroppedImagePreview } from "@/components/uncropped-image-preview";
 import { getImageRepository } from "@/lib/repositories/get-image-repository";
 import { ContentStudio } from "@/components/content-studio";
 import { extractImageDate, formatCaptureDate } from "@/lib/exif-utils";
@@ -271,10 +271,12 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
               const activeTags = image.tags;
               return (
                 <article className="image-card" key={image.id}>
-                  <UncroppedImagePreview
+                  <Image
                     alt={image.name}
-                    className="image-card-preview"
+                    height={1600}
                     src={image.thumbnailUrl}
+                    unoptimized
+                    width={1280}
                   />
                   <button
                     className="image-delete"
