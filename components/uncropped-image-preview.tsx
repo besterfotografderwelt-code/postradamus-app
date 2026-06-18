@@ -15,7 +15,11 @@ export function UncroppedImagePreview({
 }: UncroppedImagePreviewProps) {
   return (
     <span className={`uncropped-image-preview ${className}`.trim()}>
-      <span aria-hidden="true" className="uncropped-image-preview-backdrop" />
+      <span
+        aria-hidden="true"
+        className="uncropped-image-preview-backdrop"
+        style={{ backgroundImage: `url("${src}")` }}
+      />
       <Image
         alt={alt}
         className="uncropped-image-preview-image"
