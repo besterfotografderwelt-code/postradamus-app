@@ -714,6 +714,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [analyzedSlots, setAnalyzedSlots] = useState<Record<string, AnalyzedSlotContent>>({});
   const [slotTones, setSlotTones] = useState<Record<string, string>>({});
+  const [slotSchedules, setSlotSchedules] = useState<Record<string, { dayOffset: number; time: string }>>({});
   const previousGlobalTone = useRef(tone);
   const baseDate = useRef(new Date()).current;
 
@@ -760,8 +761,12 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   }, [slots, cadence]);
 
   const visibleSlots = useMemo(
-    () => filteredSlots.filter((s) => !hiddenPosts.has(s.id)),
-    [filteredSlots, hiddenPosts]
+    () => filteredSlots.filter((s) => !hiddenPosts.has(s.id)).map((slot) => {
+      const override = slotSchedules[slot.id];
+      if (!override) return slot;
+      return { ...slot, dayOffset: override.dayOffset, time: override.time };
+    }),
+    [filteredSlots, hiddenPosts, slotSchedules]
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
   const calendarWeekCount = Math.max(
@@ -1149,6 +1154,38 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
 
               {isExpanded ? (
                 <div className="feed-edit">
+                  <div className="slot-schedule-edit">
+                    <span className="meta">Datum & Uhrzeit:</span>
+                    <div className="schedule-fields">
+                      <input
+                        aria-label="Tag ab heute"
+                        max={60}
+                        min={0}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          if (!isNaN(v) && v >= 0) {
+                            setSlotSchedules((prev) => ({ ...prev, [slot.id]: { dayOffset: v, time: prev[slot.id]?.time ?? slot.time } }));
+                          }
+                        }}
+                        type="number"
+                        value={slotSchedules[slot.id]?.dayOffset ?? slot.dayOffset}
+                      />
+                      <span className="schedule-label">Tage ab heute</span>
+                      <input
+                        aria-label="Uhrzeit"
+                        onChange={(e) => {
+                          setSlotSchedules((prev) => ({ ...prev, [slot.id]: { dayOffset: prev[slot.id]?.dayOffset ?? slot.dayOffset, time: e.target.value } }));
+                        }}
+                        type="time"
+                        value={slotSchedules[slot.id]?.time ?? slot.time}
+                      />
+                      <span className="schedule-label">Uhr</span>
+                    </div>
+                    <p className="helper">
+                      <strong>{formatDate(baseDate, slotSchedules[slot.id]?.dayOffset ?? slot.dayOffset)}</strong>
+                      {" "}um {(slotSchedules[slot.id]?.time ?? slot.time)} Uhr
+                    </p>
+                  </div>
                   <div className="slot-tone-picker">
                     <span className="meta">Stil für diesen Post:</span>
                     <div className="tone-picker tone-picker-inline" style={{ marginTop: 6 }}>
