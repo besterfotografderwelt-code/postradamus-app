@@ -1585,6 +1585,51 @@ h3 { font-size: 1.15rem; }
 }
 .feed-post-meta strong { display: block; font-size: .88rem; }
 .feed-post-meta span { display: block; color: var(--muted); font-size: .76rem; }
+.schedule-edit-pencil {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  padding: 0;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 8px;
+  background: #f7f8fa;
+  font-size: .82rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+.schedule-edit-pencil:hover { background: #ebedf0; }
+.schedule-inline-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.schedule-inline-edit input {
+  padding: 4px 6px;
+  border: 1px solid rgba(0,0,0,.14);
+  border-radius: 6px;
+  font-size: .8rem;
+  background: #fff;
+}
+.schedule-inline-day { width: 48px; text-align: center; }
+.schedule-inline-time { width: 90px; font-family: inherit; }
+.schedule-inline-edit span { font-size: .7rem; color: var(--muted); }
+.schedule-inline-done {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 8px;
+  background: #0a84ff;
+  color: #fff;
+  font-size: .88rem;
+  cursor: pointer;
+}
 .feed-preview {
   position: relative;
   background: #f0f0f2;

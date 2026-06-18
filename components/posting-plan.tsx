@@ -714,6 +714,8 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [analyzedSlots, setAnalyzedSlots] = useState<Record<string, AnalyzedSlotContent>>({});
   const [slotTones, setSlotTones] = useState<Record<string, string>>({});
+  const [slotSchedules, setSlotSchedules] = useState<Record<string, { dayOffset: number; time: string }>>({});
+  const [editingSchedule, setEditingSchedule] = useState<string | null>(null);
   const previousGlobalTone = useRef(tone);
   const baseDate = useRef(new Date()).current;
 
@@ -760,8 +762,12 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   }, [slots, cadence]);
 
   const visibleSlots = useMemo(
-    () => filteredSlots.filter((s) => !hiddenPosts.has(s.id)),
-    [filteredSlots, hiddenPosts]
+    () => filteredSlots.filter((s) => !hiddenPosts.has(s.id)).map((slot) => {
+      const override = slotSchedules[slot.id];
+      if (!override) return slot;
+      return { ...slot, dayOffset: override.dayOffset, time: override.time };
+    }),
+    [filteredSlots, hiddenPosts, slotSchedules]
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
   const calendarWeekCount = Math.max(
@@ -1087,8 +1093,54 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
             <div className="feed-post" id={`post-card-${slot.id}`} key={slot.id}>
               <div className="feed-post-header">
                 <div className="feed-post-meta">
-                  <strong>{formatDate(baseDate, slot.dayOffset)}</strong>
-                  <span>{slot.time} Uhr</span>
+                  {editingSchedule === slot.id ? (
+                    <div className="schedule-inline-edit">
+                      <input
+                        aria-label="Tag ab heute"
+                        className="schedule-inline-day"
+                        max={60}
+                        min={0}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          if (!isNaN(v) && v >= 0) {
+                            setSlotSchedules((prev) => ({ ...prev, [slot.id]: { dayOffset: v, time: prev[slot.id]?.time ?? slot.time } }));
+                          }
+                        }}
+                        type="number"
+                        value={slotSchedules[slot.id]?.dayOffset ?? slot.dayOffset}
+                      />
+                      <span>Tag</span>
+                      <input
+                        aria-label="Uhrzeit"
+                        className="schedule-inline-time"
+                        onChange={(e) => {
+                          setSlotSchedules((prev) => ({ ...prev, [slot.id]: { dayOffset: prev[slot.id]?.dayOffset ?? slot.dayOffset, time: e.target.value } }));
+                        }}
+                        type="time"
+                        value={slotSchedules[slot.id]?.time ?? slot.time}
+                      />
+                      <button
+                        className="schedule-inline-done"
+                        onClick={() => setEditingSchedule(null)}
+                        type="button"
+                      >
+                        ✓
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <strong>{formatDate(baseDate, slotSchedules[slot.id]?.dayOffset ?? slot.dayOffset)}</strong>
+                      <span>{(slotSchedules[slot.id]?.time ?? slot.time)} Uhr</span>
+                      <button
+                        aria-label="Datum ändern"
+                        className="schedule-edit-pencil"
+                        onClick={(e) => { e.stopPropagation(); setEditingSchedule(slot.id); }}
+                        type="button"
+                      >
+                        ✏️
+                      </button>
+                    </>
+                  )}
                 </div>
                 <span className={`slot-type-badge slot-type-${slot.type}`}>
                   {slot.type === "reel" ? "🎬 Reel" : slot.type === "carousel" ? `🖼️ Carousel` : slot.type === "story" ? "📱 Story" : "📷 Einzelbild"}
