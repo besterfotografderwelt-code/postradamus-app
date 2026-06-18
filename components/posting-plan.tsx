@@ -726,6 +726,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   const [slotTones, setSlotTones] = useState<Record<string, string>>({});
   const [slotSchedules, setSlotSchedules] = useState<Record<string, { date: string; time: string }>>({});
   const [editingSchedule, setEditingSchedule] = useState<string | null>(null);
+  const [slotTypeOverrides, setSlotTypeOverrides] = useState<Record<string, PostSlot["type"]>>({});
   const previousGlobalTone = useRef(tone);
   const baseDate = useRef(new Date()).current;
 
@@ -773,11 +774,14 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
 
   const visibleSlots = useMemo(
     () => filteredSlots.filter((s) => !hiddenPosts.has(s.id)).map((slot) => {
-      const override = slotSchedules[slot.id];
-      if (!override) return slot;
-      return { ...slot, dayOffset: dateToDayOffset(override.date, baseDate), time: override.time };
+      const schedOverride = slotSchedules[slot.id];
+      const typeOverride = slotTypeOverrides[slot.id];
+      let result = slot;
+      if (schedOverride) result = { ...result, dayOffset: dateToDayOffset(schedOverride.date, baseDate), time: schedOverride.time };
+      if (typeOverride) result = { ...result, type: typeOverride };
+      return result;
     }),
-    [filteredSlots, hiddenPosts, slotSchedules, baseDate]
+    [filteredSlots, hiddenPosts, slotSchedules, slotTypeOverrides, baseDate]
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
   const calendarWeekCount = Math.max(
@@ -1154,10 +1158,19 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
                     );
                   })()}
                 </div>
-                <span className={`slot-type-badge slot-type-${slot.type}`}>
-                  {slot.type === "reel" ? "🎬 Reel" : slot.type === "carousel" ? `🖼️ Carousel` : slot.type === "story" ? "📱 Story" : "📷 Einzelbild"}
-                  <span className="slot-format-badge">{slot.type === "reel" || slot.type === "story" ? "9:16" : "4:5"}</span>
-                </span>
+                <select
+                  aria-label="Beitragstyp"
+                  className={`slot-type-badge slot-type-select slot-type-${slot.type}`}
+                  onChange={(e) => {
+                    setSlotTypeOverrides((prev) => ({ ...prev, [slot.id]: e.target.value as PostSlot["type"] }));
+                  }}
+                  value={slot.type}
+                >
+                  <option value="single">📷 Einzelbild · 4:5</option>
+                  <option value="carousel">🖼️ Carousel · 4:5</option>
+                  <option value="reel">🎬 Reel · 9:16</option>
+                  <option value="story">📱 Story · 9:16</option>
+                </select>
               </div>
 
               <div className="feed-preview" style={{ aspectRatio: formatRatio }}>
