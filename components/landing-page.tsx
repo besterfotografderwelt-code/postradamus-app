@@ -107,7 +107,7 @@ export function LandingPage() {
             alt="Postradamus Produktvorschau auf Laptop und Smartphone"
             fill
             priority
-            src="/marketing/postradamus-hero.webp"
+            src="/marketing/postradamus-hero.png"
             sizes="(max-width: 900px) 100vw, 52vw"
           />
         </div>
