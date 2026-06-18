@@ -85,6 +85,8 @@ export async function POST(request: Request) {
     ...(body.styleProfile ? [`Stil des Nutzers: ${body.styleProfile}`] : []),
     "",
     "Du bekommst eine Bildbeschreibung. Schreibe daraus eine komplett neue Instagram-Caption im angegebenen Ton.",
+    "Die neue Tonalität muss in Wortwahl, Satzlänge, Rhythmus und Haltung klar anders erkennbar sein.",
+    "Übernimm keine Formulierungen aus einer vorherigen Caption und vermeide generische Einstiege.",
     "Keine Fotografie-Sprache! Schreibe aus Unternehmenssicht.",
     "Die Caption soll 50 bis 90 Wörter haben.",
     "Gib 8 bis 14 passende Hashtags zurück.",
@@ -111,7 +113,7 @@ export async function POST(request: Request) {
             { role: "user", content: prompt }
           ],
           max_tokens: 500,
-          temperature: 0.7
+          temperature: 0.9
         }),
         signal: AbortSignal.timeout(12_000)
       });
@@ -140,7 +142,7 @@ export async function POST(request: Request) {
             { role: "user", content: prompt }
           ],
           max_tokens: 500,
-          temperature: 0.7,
+          temperature: 0.9,
           response_format: { type: "json_object" }
         }),
         signal: AbortSignal.timeout(12_000)

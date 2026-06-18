@@ -13,7 +13,9 @@ type ImageMetadata = {
 type AnalyzeMetadata = {
   businessType?: string;
   tone?: string;
+  slotId?: string;
   slotType?: string;
+  slotDescription?: string;
   images?: ImageMetadata[];
   styleProfile?: string;
 };
@@ -139,6 +141,8 @@ async function generateDeepSeekMetadataFallback(
     `Branche: ${metadata.businessType || "sonstiges"}`,
     `Tonalität: ${metadata.tone || "authentisch"}`,
     `Post-Typ: ${metadata.slotType || "single"}`,
+    `Inhaltlicher Winkel: ${metadata.slotDescription || metadata.slotId || "passend zum sichtbaren Motiv"}`,
+    ...(metadata.styleProfile ? [`Schreibstil des Nutzers: ${metadata.styleProfile}`] : []),
     `Bildmetadaten: ${JSON.stringify(metadata.images ?? [])}`,
     `Fallback-Grund: ${reason}`
   ].join("\n");
@@ -259,9 +263,13 @@ async function analyzeWithOpenAIVision(
     toneInstruction,
     `Branche: ${branche}`,
     `Post-Typ: ${metadata.slotType || "single"}`,
+    `Inhaltlicher Winkel: ${metadata.slotDescription || metadata.slotId || "passend zum sichtbaren Motiv"}`,
     ...(metadata.styleProfile ? [`Stil des Nutzers: ${metadata.styleProfile}`] : []),
     "",
     "Schreibe eine Instagram-Caption, die zum sichtbaren Bildinhalt und zur Branche passt.",
+    "Die gewählte Tonalität muss in Wortwahl, Satzlänge, Rhythmus und Haltung deutlich erkennbar sein.",
+    "Vermeide austauschbare Einstiege und allgemeine Social-Media-Floskeln.",
+    "Nutze mindestens zwei konkrete sichtbare Details, damit sich die Caption klar von anderen Posts unterscheidet.",
     "Keine Fotografie-Sprache! Schreibe aus Unternehmenssicht.",
     'Antworte AUSSCHLIESSLICH mit diesem JSON:',
     '{"caption": "...", "hashtags": "#tag1 #tag2 ...", "summary": "was sichtbar ist"}'
@@ -286,7 +294,7 @@ async function analyzeWithOpenAIVision(
         }
       ],
       max_tokens: 600,
-      temperature: 0.7,
+      temperature: 0.9,
       response_format: { type: "json_object" }
     }),
     signal: AbortSignal.timeout(25_000)

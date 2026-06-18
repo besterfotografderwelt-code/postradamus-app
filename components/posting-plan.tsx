@@ -92,7 +92,14 @@ function slotAnalysisKey(slot: PostSlot, images: ProjectImage[], effectiveTone: 
   ].join("|");
 }
 
-async function analyzePostSlot(slot: PostSlot, images: ProjectImage[], tone: string, businessType: string, styleProfile?: string) {
+async function analyzePostSlot(
+  slot: PostSlot,
+  images: ProjectImage[],
+  tone: string,
+  businessType: string,
+  styleProfile?: string,
+  signal?: AbortSignal
+) {
   const formData = new FormData();
   await Promise.all(images.slice(0, MAX_ANALYSIS_IMAGES).map(async (image, index) => {
     const response = await fetch(image.thumbnailUrl);
@@ -102,7 +109,9 @@ async function analyzePostSlot(slot: PostSlot, images: ProjectImage[], tone: str
   formData.append("metadata", JSON.stringify({
     businessType,
     tone: tone || "authentisch",
+    slotId: slot.id,
     slotType: slot.type,
+    slotDescription: slot.description,
     styleProfile: styleProfile || "",
     images: images.map((image) => ({
       id: image.id,
@@ -115,7 +124,7 @@ async function analyzePostSlot(slot: PostSlot, images: ProjectImage[], tone: str
   const response = await fetch("/api/analyze-post", {
     method: "POST",
     body: formData,
-    signal: AbortSignal.timeout(30_000)
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000)
   });
   const data = await response.json() as Partial<AnalyzedSlotContent> & { error?: string };
   if (!response.ok || !data.caption || !data.hashtags) {
@@ -128,13 +137,14 @@ async function regenerateCaptionForTone(
   summary: string,
   tone: string,
   businessType: string,
-  styleProfile?: string
+  styleProfile?: string,
+  signal?: AbortSignal
 ): Promise<{ caption: string; hashtags: string } | null> {
   const response = await fetch("/api/retone", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ summary, tone: tone || "authentisch", businessType, styleProfile }),
-    signal: AbortSignal.timeout(12_000)
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12_000)]) : AbortSignal.timeout(12_000)
   });
   if (!response.ok) return null;
   const data = await response.json() as { caption?: string; hashtags?: string };
@@ -661,7 +671,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [analyzedSlots, setAnalyzedSlots] = useState<Record<string, AnalyzedSlotContent>>({});
   const [slotTones, setSlotTones] = useState<Record<string, string>>({});
-  const analyzingKeys = useRef<Set<string>>(new Set());
+  const previousGlobalTone = useRef(tone);
   const baseDate = useRef(new Date()).current;
 
   const styleProfile = useMemo(() => {
@@ -699,85 +709,12 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
 
-  // Auto-generate via 2-Step Vision Pipeline (Analyse → Caption → Validate → Retry)
   useEffect(() => {
-    const validSlots = filteredSlots.filter((s) => s.type !== "story" && s.type !== "reel");
-    if (validSlots.length === 0 || !images.length) return;
-    let cancelled = false;
-
-    // Clear captions for slots that no longer exist
-    const slotIds = new Set(validSlots.map((s) => s.id));
-    setEditedCaptions((prev) => {
-      const next: Record<string, string> = {};
-      for (const [id, val] of Object.entries(prev)) {
-        if (slotIds.has(id)) next[id] = val;
-      }
-      return next;
-    });
-
-    async function imageToBase64(img: { thumbnailUrl: string }): Promise<string | null> {
-      try {
-        const res = await fetch(img.thumbnailUrl);
-        const blob = await res.blob();
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-      } catch {
-        return null;
-      }
-    }
-
-    const generatedOpenings: string[] = [];
-
-    async function generate() {
-      // Read onboarding ONCE for all slots
-      let ob = "";
-      try {
-        const raw = localStorage.getItem("flowstream.onboarding");
-        if (raw) {
-          const data = JSON.parse(raw);
-          const sp = data.styleProfile;
-          if (sp?.promptAddition) ob = sp.promptAddition;
-          else if (sp?.traits) ob = `Stil: ${sp.traits}`;
-        }
-      } catch { /* ignore */ }
-
-      for (let i = 0; i < validSlots.length; i++) {
-        if (cancelled) return;
-        const slot = validSlots[i];
-        const img = slot.images[0];
-        if (!img?.thumbnailUrl) continue;
-
-        const base64 = await imageToBase64(img);
-        if (!base64) continue;
-
-        try {
-          const res = await fetch("/api/generate-vision", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              imageBase64: base64,
-              businessType,
-              brandName: "",
-              slotIndex: i,
-              previousOpenings: generatedOpenings,
-              styleProfile: ob || undefined,
-            }),
-          });
-          const data = await res.json();
-          if (data.content && !cancelled) {
-            setEditedCaptions((prev) => ({ ...prev, [slot.id]: data.content }));
-            const opening = data.content.split(/[.!?]/)[0].trim().toLowerCase();
-            if (opening) generatedOpenings.push(opening);
-          }
-        } catch { /* skip */ }
-      }
-    }
-    generate();
-    return () => { cancelled = true; };
-  }, [filteredSlots, tone, businessType, styleProfile, images]);
+    if (previousGlobalTone.current === tone) return;
+    previousGlobalTone.current = tone;
+    setEditedCaptions({});
+    setEditedHashtags({});
+  }, [tone]);
 
   const plannedPosts = useMemo<PlannedPost[]>(() => {
     return visibleSlots.map((slot) => {
@@ -820,12 +757,13 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     const pending = filteredSlots
       .map((slot) => {
         const effectiveImages = imageOverrides[slot.id] ?? slot.images;
         const effectiveTone = slotTones[slot.id] || tone;
         const key = slotAnalysisKey(slot, effectiveImages, effectiveTone, businessType);
-        if (effectiveImages.length === 0 || analyzedSlots[slot.id]?.key === key || analyzingKeys.current.has(key)) return null;
+        if (effectiveImages.length === 0 || analyzedSlots[slot.id]?.key === key) return null;
         return { slot, effectiveImages, key, effectiveTone };
       })
       .filter((item): item is { slot: PostSlot; effectiveImages: ProjectImage[]; key: string; effectiveTone: string } => Boolean(item));
@@ -834,7 +772,6 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
 
     // Process ONE slot at a time to avoid rate limiting
     const { slot, effectiveImages, key, effectiveTone } = pending[0];
-    analyzingKeys.current.add(key);
 
     const run = async () => {
       try {
@@ -842,7 +779,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
         const prevAnalyzed = analyzedSlots[slot.id];
         const prevSummary = prevAnalyzed?.summary;
         if (prevSummary && prevAnalyzed?.key !== key) {
-          const result = await regenerateCaptionForTone(prevSummary, effectiveTone, businessType, styleProfile);
+          const result = await regenerateCaptionForTone(prevSummary, effectiveTone, businessType, styleProfile, controller.signal);
           if (result) {
             if (cancelled) return;
             setAnalyzedSlots((current) => ({
@@ -854,7 +791,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
           // Fallback: full analysis if retone fails
         }
 
-        const result = await analyzePostSlot(slot, effectiveImages, effectiveTone, businessType, styleProfile);
+        const result = await analyzePostSlot(slot, effectiveImages, effectiveTone, businessType, styleProfile, controller.signal);
         if (cancelled) return;
         setAnalyzedSlots((current) => ({
           ...current,
@@ -872,14 +809,15 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
             generator: "metadata"
           }
         }));
-      } finally {
-        analyzingKeys.current.delete(key);
       }
     };
 
     run();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [analyzedSlots, businessType, filteredSlots, imageOverrides, slotTones, styleProfile, tone]);
 
   return (
@@ -1021,7 +959,17 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
                             className={`tone-chip ${currentSlotTone === tBtn.value ? "is-active" : ""}`}
                             key={tBtn.value}
                             onClick={() => {
-                              setSlotTones({ ...slotTones, [slot.id]: tBtn.value });
+                              setSlotTones((current) => ({ ...current, [slot.id]: tBtn.value }));
+                              setEditedCaptions((current) => {
+                                const next = { ...current };
+                                delete next[slot.id];
+                                return next;
+                              });
+                              setEditedHashtags((current) => {
+                                const next = { ...current };
+                                delete next[slot.id];
+                                return next;
+                              });
                             }}
                             type="button"
                           >

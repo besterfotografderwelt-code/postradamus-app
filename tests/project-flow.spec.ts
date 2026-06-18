@@ -212,3 +212,67 @@ test("Demo-Content wird erzeugt und der Postingplan wird angezeigt", async ({ pa
   await page.goto(`/projects/${projectId}`);
   await expect(page.getByRole("heading", { name: "Postingplan" })).toBeVisible();
 });
+
+test("Caption wird nur einmal erzeugt und reagiert auf Stilwechsel", async ({ page }) => {
+  await seedOnboarding(page);
+
+  const analyzeRequests: string[] = [];
+  const retoneRequests: string[] = [];
+  let legacyVisionRequests = 0;
+  await page.route("**/api/generate-vision", async (route) => {
+    legacyVisionRequests++;
+    await route.fulfill({ json: { content: "Diese veraltete Caption darf nie erscheinen." } });
+  });
+  await page.route("**/api/analyze-post", async (route) => {
+    const body = route.request().postData() ?? "";
+    analyzeRequests.push(body);
+    const isFunny = body.includes('"tone":"lustig"');
+    await route.fulfill({
+      json: {
+        caption: isFunny ? "Lustige Test-Caption 😄" : "Authentische Test-Caption",
+        hashtags: "#eins #zwei #drei #vier #fuenf #sechs #sieben #acht",
+        summary: "Testmotiv",
+        generator: "openai-vision"
+      }
+    });
+  });
+  await page.route("**/api/retone", async (route) => {
+    const body = route.request().postData() ?? "";
+    retoneRequests.push(body);
+    await route.fulfill({
+      json: {
+        caption: "Lustige Test-Caption 😄",
+        hashtags: "#eins #zwei #drei #vier #fuenf #sechs #sieben #acht"
+      }
+    });
+  });
+
+  await page.goto("/projects/new");
+  await page.getByRole("button", { name: "Nur Fotos hochladen" }).click();
+
+  const imageBase64 = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 120;
+    canvas.height = 80;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Testbild konnte nicht erzeugt werden.");
+    context.fillStyle = "#d9b99b";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.9).split(",")[1];
+  });
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "caption-test.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from(imageBase64, "base64")
+  });
+
+  await page.getByRole("button", { name: "Authentisch" }).click();
+  await expect(page.getByText("Authentische Test-Caption").first()).toBeVisible();
+  expect(analyzeRequests.length).toBeGreaterThan(0);
+  expect(legacyVisionRequests).toBe(0);
+
+  await page.getByRole("button", { name: "Lustig" }).first().click();
+  await expect(page.getByText("Lustige Test-Caption 😄").first()).toBeVisible();
+  expect(retoneRequests.some((body) => body.includes('"tone":"lustig"'))).toBe(true);
+  expect(legacyVisionRequests).toBe(0);
+});
