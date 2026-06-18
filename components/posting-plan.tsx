@@ -684,6 +684,16 @@ function normalizeMentions(value: string): string[] {
   ));
 }
 
+function dateToDayOffset(dateStr: string, baseDate: Date): number {
+  const target = new Date(dateStr + "T12:00:00");
+  const base = new Date(baseDate); base.setHours(12, 0, 0, 0);
+  return Math.round((target.getTime() - base.getTime()) / 86400000);
+}
+function dayOffsetToDateStr(dayOffset: number, baseDate: Date): string {
+  const d = new Date(baseDate); d.setDate(d.getDate() + dayOffset);
+  return d.toISOString().slice(0, 10);
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -714,7 +724,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [analyzedSlots, setAnalyzedSlots] = useState<Record<string, AnalyzedSlotContent>>({});
   const [slotTones, setSlotTones] = useState<Record<string, string>>({});
-  const [slotSchedules, setSlotSchedules] = useState<Record<string, { dayOffset: number; time: string }>>({});
+  const [slotSchedules, setSlotSchedules] = useState<Record<string, { date: string; time: string }>>({});
   const [editingSchedule, setEditingSchedule] = useState<string | null>(null);
   const previousGlobalTone = useRef(tone);
   const baseDate = useRef(new Date()).current;
@@ -765,9 +775,9 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
     () => filteredSlots.filter((s) => !hiddenPosts.has(s.id)).map((slot) => {
       const override = slotSchedules[slot.id];
       if (!override) return slot;
-      return { ...slot, dayOffset: override.dayOffset, time: override.time };
+      return { ...slot, dayOffset: dateToDayOffset(override.date, baseDate), time: override.time };
     }),
-    [filteredSlots, hiddenPosts, slotSchedules]
+    [filteredSlots, hiddenPosts, slotSchedules, baseDate]
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
   const calendarWeekCount = Math.max(
@@ -1091,56 +1101,58 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
 
           return (
             <div className="feed-post" id={`post-card-${slot.id}`} key={slot.id}>
-              <div className="feed-post-header">
+                <div className="feed-post-header">
                 <div className="feed-post-meta">
-                  {editingSchedule === slot.id ? (
-                    <div className="schedule-inline-edit">
-                      <input
-                        aria-label="Tag ab heute"
-                        className="schedule-inline-day"
-                        max={60}
-                        min={0}
-                        onChange={(e) => {
-                          const v = Number(e.target.value);
-                          if (!isNaN(v) && v >= 0) {
-                            setSlotSchedules((prev) => ({ ...prev, [slot.id]: { dayOffset: v, time: prev[slot.id]?.time ?? slot.time } }));
-                          }
-                        }}
-                        type="number"
-                        value={slotSchedules[slot.id]?.dayOffset ?? slot.dayOffset}
-                      />
-                      <span>Tag</span>
-                      <input
-                        aria-label="Uhrzeit"
-                        className="schedule-inline-time"
-                        onChange={(e) => {
-                          setSlotSchedules((prev) => ({ ...prev, [slot.id]: { dayOffset: prev[slot.id]?.dayOffset ?? slot.dayOffset, time: e.target.value } }));
-                        }}
-                        type="time"
-                        value={slotSchedules[slot.id]?.time ?? slot.time}
-                      />
-                      <button
-                        className="schedule-inline-done"
-                        onClick={() => setEditingSchedule(null)}
-                        type="button"
-                      >
-                        ✓
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <strong>{formatDate(baseDate, slotSchedules[slot.id]?.dayOffset ?? slot.dayOffset)}</strong>
-                      <span>{(slotSchedules[slot.id]?.time ?? slot.time)} Uhr</span>
-                      <button
-                        aria-label="Datum ändern"
-                        className="schedule-edit-pencil"
-                        onClick={(e) => { e.stopPropagation(); setEditingSchedule(slot.id); }}
-                        type="button"
-                      >
-                        ✏️
-                      </button>
-                    </>
-                  )}
+                  {(() => {
+                    const scheduleDate = slotSchedules[slot.id]?.date ?? dayOffsetToDateStr(slot.dayOffset, baseDate);
+                    const scheduleTime = slotSchedules[slot.id]?.time ?? slot.time;
+                    const displayDayOffset = dateToDayOffset(scheduleDate, baseDate);
+                    if (editingSchedule === slot.id) {
+                      return (
+                        <div className="schedule-inline-edit">
+                          <input
+                            aria-label="Datum"
+                            className="schedule-inline-date"
+                            onChange={(e) => {
+                              setSlotSchedules((prev) => ({ ...prev, [slot.id]: { date: e.target.value, time: prev[slot.id]?.time ?? slot.time } }));
+                            }}
+                            type="date"
+                            value={scheduleDate}
+                          />
+                          <input
+                            aria-label="Uhrzeit"
+                            className="schedule-inline-time"
+                            onChange={(e) => {
+                              setSlotSchedules((prev) => ({ ...prev, [slot.id]: { date: prev[slot.id]?.date ?? dayOffsetToDateStr(slot.dayOffset, baseDate), time: e.target.value } }));
+                            }}
+                            type="time"
+                            value={scheduleTime}
+                          />
+                          <button
+                            className="schedule-inline-done"
+                            onClick={() => setEditingSchedule(null)}
+                            type="button"
+                          >
+                            ✓
+                          </button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <>
+                        <strong>{formatDate(baseDate, displayDayOffset)}</strong>
+                        <span>{scheduleTime} Uhr</span>
+                        <button
+                          aria-label="Datum ändern"
+                          className="schedule-edit-pencil"
+                          onClick={(e) => { e.stopPropagation(); setEditingSchedule(slot.id); }}
+                          type="button"
+                        >
+                          ✏️
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
                 <span className={`slot-type-badge slot-type-${slot.type}`}>
                   {slot.type === "reel" ? "🎬 Reel" : slot.type === "carousel" ? `🖼️ Carousel` : slot.type === "story" ? "📱 Story" : "📷 Einzelbild"}
