@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { UncroppedImagePreview } from "@/components/uncropped-image-preview";
 import type { ProjectImage } from "@/lib/types";
 
 export type PlannedPost = {
@@ -1023,12 +1024,11 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
                       type="button"
                     >
                       {previewImage ? (
-                        <Image
+                        <UncroppedImagePreview
                           alt=""
-                          fill
+                          className="plan-calendar-post-preview"
+                          objectPosition={`${cropPos.x}% ${cropPos.y}%`}
                           src={previewImage.thumbnailUrl}
-                          style={{ objectFit: "cover", objectPosition: `${cropPos.x}% ${cropPos.y}%` }}
-                          unoptimized
                         />
                       ) : null}
                       <span className="plan-calendar-post-shade" />
