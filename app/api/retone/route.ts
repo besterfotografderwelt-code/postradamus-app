@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { captionStyleContract, styleContrastRule } from "@/lib/caption-style";
 
 type RetoneRequest = {
   summary: string;
@@ -22,14 +23,6 @@ const variationInstructions = [
   "Steige ohne Einleitung mitten in die Handlung ein."
 ];
 
-function personalStyleInstruction(body: RetoneRequest) {
-  if (!body.styleProfile) return "";
-  const authentic = body.tone.trim().toLowerCase() === "authentisch";
-  return authentic
-    ? `VERBINDLICHER PERSÖNLICHER SCHREIBSTIL: ${body.styleProfile}. Bei AUTHENTISCH hat dieser Onboarding-Stil Vorrang.`
-    : `Persönlicher Stil als sekundäre Leitlinie: ${body.styleProfile}`;
-}
-
 function readLocalEnvValue(name: string): string {
   const fromProcess = process.env[name]?.trim();
   if (fromProcess) return fromProcess;
@@ -49,19 +42,6 @@ function businessLabel(type?: string) {
     produktfotograf: "Produktfotografie",
   };
   return map[(type || "sonstiges").trim().toLowerCase()] || type || "Sonstiges";
-}
-
-function toneInstruction(tone: string) {
-  const t = tone.trim().toLowerCase();
-  if (t === "lustig") return "LUSTIG: Humor, locker, Emojis 😄🎉, flapsig und unterhaltsam. Keine ernsten Formulierungen.";
-  if (t === "emotional") return "EMOTIONAL: Gefühlvoll, tief, berührend. Warme Sprache, persönliche Stimme.";
-  if (t === "motivierend") return "MOTIVIEREND: Antreibend, kraftvoll, energisch. Power-Wörter. 💪";
-  if (t === "romantisch") return "ROMANTISCH: Verträumt, zärtlich, sanft. 🤍";
-  if (t === "modern") return "MODERN & EDGY: Clean, kurz, selbstbewusst. Englische Einschübe ok. Kein Kitsch.";
-  if (t === "kurz") return "KURZ & KNACKIG: Maximal 2-3 Sätze. Kein Füllwort.";
-  if (t === "informativ") return "INFORMATIV: Sachlich, erklärend, strukturiert. Fakten statt Floskeln.";
-  if (t === "lässig") return "LÄSSIG: Entspannt, natürlich, wie zu einem Freund.";
-  return "AUTHENTISCH: Natürlich, ehrlich, ungekünstelt.";
 }
 
 function normalizeHashtags(value: unknown): string {
@@ -98,19 +78,17 @@ export async function POST(request: Request) {
   }
 
   const branche = businessLabel(body.businessType);
-  const ti = toneInstruction(body.tone);
-
   const prompt = [
     `Branche: ${branche}`,
-    `Tonalität: ${ti}`,
-    personalStyleInstruction(body),
+    captionStyleContract(body),
+    styleContrastRule(body.tone),
     variationInstructions[Math.abs(body.variationIndex ?? 0) % variationInstructions.length],
     body.includeCta
       ? "Beende mit einem kurzen, natürlichen CTA, der zum Inhalt passt."
       : "Beende ohne CTA mit einem eigenständigen Gedanken.",
     "",
     "Du bekommst eine Bildbeschreibung. Schreibe daraus eine komplett neue Instagram-Caption im angegebenen Ton.",
-    "Die neue Tonalität muss in Wortwahl, Satzlänge, Rhythmus und Haltung klar anders erkennbar sein.",
+    "Schreibe von Grund auf neu. Ein bloßer Austausch einzelner Adjektive erfüllt den Stilwechsel nicht.",
     "Übernimm keine Formulierungen aus einer vorherigen Caption und vermeide generische Einstiege.",
     "Vermeide Floskeln wie „inmitten von“, „mehr als nur“, „genau solche“, „magischer Moment“ und „für die Ewigkeit“.",
     ...((body.previousCaptions ?? []).length > 0
@@ -120,7 +98,6 @@ export async function POST(request: Request) {
         ]
       : []),
     "Keine Fotografie-Sprache! Schreibe aus Unternehmenssicht.",
-    "Die Caption soll 50 bis 90 Wörter haben.",
     "Gib 8 bis 14 passende Hashtags zurück.",
     "",
     `Bildbeschreibung: ${body.summary}`,

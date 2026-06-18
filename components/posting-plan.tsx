@@ -813,12 +813,16 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
         const prevAnalyzed = analyzedSlots[slot.id];
         const prevSummary = prevAnalyzed?.summary;
         if (prevSummary && prevAnalyzed?.key !== key) {
+          const captionsToAvoid = [
+            prevAnalyzed.caption,
+            ...previousCaptions
+          ].filter(Boolean).slice(0, 7);
           const result = await regenerateCaptionForTone(
             prevSummary,
             effectiveTone,
             businessType,
             styleProfile,
-            previousCaptions,
+            captionsToAvoid,
             variationIndex,
             controller.signal
           );

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
+import { captionStyleContract, styleContrastRule } from "@/lib/caption-style";
 
 type ImageMetadata = {
   id: string;
@@ -129,14 +130,6 @@ function findRepeatedPhrases(candidate: string, previousCaptions: string[]): str
   return Array.from(new Set(repeated));
 }
 
-function styleInstruction(metadata: AnalyzeMetadata) {
-  const authentic = (metadata.tone || "authentisch").trim().toLowerCase() === "authentisch";
-  if (!metadata.styleProfile) return "";
-  return authentic
-    ? `VERBINDLICHER PERSÖNLICHER SCHREIBSTIL: ${metadata.styleProfile}. Dieser Onboarding-Stil hat bei AUTHENTISCH Vorrang vor allgemeinen Standardformulierungen.`
-    : `Persönlicher Schreibstil als sekundäre Leitlinie: ${metadata.styleProfile}`;
-}
-
 function diversityInstructions(metadata: AnalyzeMetadata) {
   const previous = (metadata.previousCaptions ?? []).filter(Boolean).slice(-6);
   const variation = variationInstructions[Math.abs(metadata.variationIndex ?? 0) % variationInstructions.length];
@@ -208,7 +201,7 @@ async function generateDeepSeekMetadataFallback(
   const prompt = [
     "Schreibe eine Instagram-Caption auf Deutsch.",
     "Du bekommst KEIN Bild, sondern nur Tags und Dateinamen. Schreibe so spezifisch wie möglich auf Basis der Metadaten, ohne Bilddetails zu erfinden.",
-    "Die Caption soll 50 bis 85 Wörter haben, natürlich klingen und keine KI-Floskeln enthalten.",
+    "Halte dich bei Länge und Textform exakt an den Stilvertrag. Verwende keine KI-Floskeln.",
     "Gib 8 bis 14 passende Hashtags zurück.",
     "Antworte ausschließlich als JSON mit den Keys caption, hashtags und summary.",
     "",
@@ -216,7 +209,8 @@ async function generateDeepSeekMetadataFallback(
     `Tonalität: ${metadata.tone || "authentisch"}`,
     `Post-Typ: ${metadata.slotType || "single"}`,
     `Inhaltlicher Winkel: ${metadata.slotDescription || metadata.slotId || "passend zum sichtbaren Motiv"}`,
-    styleInstruction(metadata),
+    captionStyleContract(metadata),
+    styleContrastRule(metadata.tone),
     ...diversityInstructions(metadata),
     `Bildmetadaten: ${JSON.stringify(metadata.images ?? [])}`,
     `Fallback-Grund: ${reason}`
@@ -310,39 +304,26 @@ async function analyzeWithOpenAIVision(
     }))
   );
 
-  const toneInstruction = (() => {
-    const t = (metadata.tone || "").trim().toLowerCase();
-    if (t === "lustig") return "Tonalität: LUSTIG. Schreibe mit Humor, locker, mit Emojis 😄🎉, darf flapsig und unterhaltsam sein. Keine ernsten oder gefühlvollen Formulierungen.";
-    if (t === "emotional") return "Tonalität: EMOTIONAL. Schreibe gefühlvoll, tief, berührend. Sprich das Herz an, verwende warme Bilder und eine persönliche, nahbare Stimme.";
-    if (t === "motivierend") return "Tonalität: MOTIVIEREND. Schreibe antreibend, kraftvoll, mit Energie. Verwende Power-Wörter wie 'schaffen', 'wachsen', 'stärker', 'Ziel', 'Disziplin'. 💪";
-    if (t === "romantisch") return "Tonalität: ROMANTISCH. Schreibe verträumt, zärtlich, mit Liebe zum Detail. Sanfte Sprache, Herzen und Gefühl. 🤍";
-    if (t === "modern") return "Tonalität: MODERN & EDGY. Schreibe clean, kurz, selbstbewusst. Englische Einschübe ok. Kein Kitsch, kein Pathos. Cool und direkt.";
-    if (t === "kurz") return "Tonalität: KURZ & KNACKIG. Maximal 2-3 Sätze. Auf den Punkt, kein Füllwort, kein Blabla. Jedes Wort muss sitzen.";
-    if (t === "informativ") return "Tonalität: INFORMATIV. Schreibe sachlich, erklärend, mit Mehrwert. Strukturiert, klar, ohne Übertreibung. Fakten statt Floskeln.";
-    if (t === "lässig") return "Tonalität: LÄSSIG. Schreibe entspannt, natürlich, wie zu einem Freund. Kein Business-Sprech, kein Verkaufen, einfach echt und locker.";
-    return "Tonalität: AUTHENTISCH. Schreibe natürlich, ehrlich und ungekünstelt. Keine Übertreibung, kein Marketing-Gelaber.";
-  })();
-
   const systemPrompt = [
     `Du schreibst Social-Media-Texte für ein Unternehmen der Branche: ${branche}.`,
     `Schreibe AUSSCHLIESSLICH aus Sicht dieses Unternehmens, NICHT aus Sicht eines Fotografen.`,
     `Verwende KEINE Begriffe wie "Aufnahme", "Bild", "Foto", "Licht", "Perspektive", "Komposition" oder ähnliche Fotografie-Fachsprache.`,
     `Beschreibe stattdessen, was im Bild zu sehen ist: Menschen, Orte, Produkte, Stimmung, Aktion.`,
     "Analysiere das Bild visuell, bevor du schreibst.",
-    "Die Caption soll 50 bis 90 Wörter haben, hochwertig und konkret sein.",
+    "Länge und Textform richten sich verbindlich nach dem gewählten Stilvertrag.",
     "Gib 8 bis 14 passende Hashtags zurück.",
     ""
   ].join("\n");
 
   const userPrompt = [
-    toneInstruction,
+    captionStyleContract(metadata),
+    styleContrastRule(metadata.tone),
     `Branche: ${branche}`,
     `Post-Typ: ${metadata.slotType || "single"}`,
     `Inhaltlicher Winkel: ${metadata.slotDescription || metadata.slotId || "passend zum sichtbaren Motiv"}`,
-    styleInstruction(metadata),
     "",
     "Schreibe eine Instagram-Caption, die zum sichtbaren Bildinhalt und zur Branche passt.",
-    "Die gewählte Tonalität muss in Wortwahl, Satzlänge, Rhythmus und Haltung deutlich erkennbar sein.",
+    "Die gewählte Tonalität muss die gesamte Textform bestimmen. Tausche nicht nur einzelne Wörter aus.",
     "Vermeide austauschbare Einstiege und allgemeine Social-Media-Floskeln.",
     "Nutze mindestens zwei konkrete sichtbare Details, damit sich die Caption klar von anderen Posts unterscheidet.",
     ...diversityInstructions(metadata),
