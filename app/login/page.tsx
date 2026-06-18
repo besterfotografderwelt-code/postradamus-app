@@ -11,19 +11,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <div className="auth-wrap">
-      <section className="auth-intro panel">
-        <div className="eyebrow">Postradamus Account</div>
-        <h1>Deine Projekte, sicher organisiert.</h1>
-        <p className="lead">
-          Projekte, Bilder und KI-Texte werden pro Konto getrennt und geschützt gespeichert.
-        </p>
-        <div className="auth-points">
-          <span>Private Projekte</span>
-          <span>Geschützter Bildspeicher</span>
-          <span>Deutsch und Englisch</span>
-        </div>
-      </section>
-
       <section className="auth-card panel">
         <div>
           <div className="eyebrow">Anmelden oder starten</div>
