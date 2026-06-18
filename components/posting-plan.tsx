@@ -53,6 +53,33 @@ function formatDate(baseDate: Date, offset: number): string {
   return new Intl.DateTimeFormat("de-AT", { weekday: "short", day: "2-digit", month: "long" }).format(d);
 }
 
+function dateAtOffset(baseDate: Date, offset: number): Date {
+  const date = new Date(baseDate);
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + offset);
+  return date;
+}
+
+function calendarDayLabel(date: Date): { weekday: string; day: string } {
+  return {
+    weekday: new Intl.DateTimeFormat("de-AT", { weekday: "short" }).format(date).replace(".", ""),
+    day: new Intl.DateTimeFormat("de-AT", { day: "2-digit" }).format(date)
+  };
+}
+
+function calendarMonthLabel(start: Date, end: Date): string {
+  const startMonth = new Intl.DateTimeFormat("de-AT", { month: "long" }).format(start);
+  const endMonth = new Intl.DateTimeFormat("de-AT", { month: "long" }).format(end);
+  const year = end.getFullYear();
+  return startMonth === endMonth ? `${startMonth} ${year}` : `${startMonth} – ${endMonth} ${year}`;
+}
+
+function timeToCalendarPosition(time: string): number {
+  const [hours, minutes] = time.split(":").map(Number);
+  const value = hours + minutes / 60;
+  return Math.max(0, Math.min(100, ((value - 7) / 14) * 100));
+}
+
 function getOptimalTime(dayOffset: number): string {
   const day = (new Date().getDay() + dayOffset) % 7;
   if (day === 0) return "10:00";
@@ -675,6 +702,7 @@ function composePreviewCaption(caption: string, mentions: string[]): string {
 
 export function PostingPlan({ images, tone = "", businessType = "sonstiges", onPlanChange }: PostingPlanProps) {
   const [cadence, setCadence] = useState<Cadence>({ interval: "weekly", count: 3 });
+  const [calendarWeek, setCalendarWeek] = useState(0);
   const [expandedSlot, setExpandedSlot] = useState<string | null>(null);
   const [editedCaptions, setEditedCaptions] = useState<Record<string, string>>({});
   const [editedHashtags, setEditedHashtags] = useState<Record<string, string>>({});
@@ -736,6 +764,27 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
     [filteredSlots, hiddenPosts]
   );
   const displayedSlots = showAllPosts ? visibleSlots : visibleSlots.slice(0, 6);
+  const calendarWeekCount = Math.max(
+    1,
+    Math.ceil(((visibleSlots.at(-1)?.dayOffset ?? 0) + 1) / 7)
+  );
+  const activeCalendarWeek = Math.min(calendarWeek, calendarWeekCount - 1);
+  const calendarStartOffset = activeCalendarWeek * 7;
+  const calendarDays = useMemo(
+    () => Array.from({ length: 7 }, (_, index) => ({
+      offset: calendarStartOffset + index,
+      date: dateAtOffset(baseDate, calendarStartOffset + index)
+    })),
+    [baseDate, calendarStartOffset]
+  );
+  const calendarSlots = useMemo(
+    () => visibleSlots.filter((slot) => slot.dayOffset >= calendarStartOffset && slot.dayOffset < calendarStartOffset + 7),
+    [calendarStartOffset, visibleSlots]
+  );
+
+  useEffect(() => {
+    if (calendarWeek >= calendarWeekCount) setCalendarWeek(calendarWeekCount - 1);
+  }, [calendarWeek, calendarWeekCount]);
 
   useEffect(() => {
     if (previousGlobalTone.current === tone) return;
@@ -906,6 +955,112 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
         <strong>Jeder Post bleibt bearbeitbar.</strong>
         <span>Über &bdquo;Bearbeiten&ldquo; kannst du Caption, Stil, markierte Accounts, Hashtags, Bildbeschnitt und Bildauswahl ändern.</span>
       </div>
+
+      <section className="plan-calendar" aria-label="Postingplan als Wochenkalender">
+        <div className="plan-calendar-toolbar">
+          <div>
+            <span className="plan-calendar-kicker">Kalender</span>
+            <h4>{calendarMonthLabel(calendarDays[0].date, calendarDays[6].date)}</h4>
+          </div>
+          <div className="plan-calendar-navigation">
+            <button
+              aria-label="Vorherige Woche"
+              disabled={activeCalendarWeek === 0}
+              onClick={() => setCalendarWeek((current) => Math.max(0, current - 1))}
+              type="button"
+            >
+              ‹
+            </button>
+            <span>Woche {activeCalendarWeek + 1} / {calendarWeekCount}</span>
+            <button
+              aria-label="Nächste Woche"
+              disabled={activeCalendarWeek >= calendarWeekCount - 1}
+              onClick={() => setCalendarWeek((current) => Math.min(calendarWeekCount - 1, current + 1))}
+              type="button"
+            >
+              ›
+            </button>
+          </div>
+        </div>
+
+        <div className="plan-calendar-scroll">
+          <div className="plan-calendar-grid">
+            <div className="plan-calendar-corner" />
+            {calendarDays.map(({ date, offset }) => {
+              const label = calendarDayLabel(date);
+              const isToday = offset === 0;
+              return (
+                <div className={`plan-calendar-day ${isToday ? "is-today" : ""}`} key={offset}>
+                  <span>{label.weekday}</span>
+                  <strong>{label.day}</strong>
+                </div>
+              );
+            })}
+
+            <div className="plan-calendar-times" aria-hidden="true">
+              {["07:00", "10:00", "13:00", "16:00", "19:00", "21:00"].map((time) => (
+                <span key={time}>{time}</span>
+              ))}
+            </div>
+
+            {calendarDays.map(({ offset }) => (
+              <div className="plan-calendar-column" key={offset}>
+                {calendarSlots.filter((slot) => slot.dayOffset === offset).map((slot) => {
+                  const effectiveImages = imageOverrides[slot.id] ?? slot.images;
+                  const previewImage = effectiveImages[0];
+                  const cropPos = cropPositions[slot.id] ?? { x: 50, y: 50 };
+                  return (
+                    <button
+                      className={`plan-calendar-post plan-calendar-post-${slot.type}`}
+                      key={slot.id}
+                      onClick={() => {
+                        setExpandedSlot(slot.id);
+                        window.setTimeout(() => {
+                          document.getElementById(`post-card-${slot.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }, 0);
+                      }}
+                      style={{ top: `${timeToCalendarPosition(slot.time)}%` }}
+                      type="button"
+                    >
+                      {previewImage ? (
+                        <Image
+                          alt=""
+                          fill
+                          src={previewImage.thumbnailUrl}
+                          style={{ objectFit: "cover", objectPosition: `${cropPos.x}% ${cropPos.y}%` }}
+                          unoptimized
+                        />
+                      ) : null}
+                      <span className="plan-calendar-post-shade" />
+                      <span className="plan-calendar-post-copy">
+                        <strong>{slot.time}</strong>
+                        <small>{slot.type === "reel" ? "Reel" : slot.type === "carousel" ? "Carousel" : slot.type === "story" ? "Story" : "Post"}</small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="plan-calendar-legend">
+          <span><i className="legend-dot legend-post" /> Post</span>
+          <span><i className="legend-dot legend-carousel" /> Carousel</span>
+          <span><i className="legend-dot legend-reel" /> Reel</span>
+          <span><i className="legend-dot legend-story" /> Story</span>
+          <small>Beitrag anklicken, um ihn zu bearbeiten.</small>
+        </div>
+      </section>
+
+      <div className="plan-posts-heading">
+        <div>
+          <span>Geplante Beiträge</span>
+          <strong>Vorschau und Bearbeitung</strong>
+        </div>
+        <small>{visibleSlots.length} Beiträge</small>
+      </div>
+
       <div className="feed-grid">
         {displayedSlots.map((slot) => {
           const isExpanded = expandedSlot === slot.id;
@@ -929,7 +1084,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
           const objectPos = `${cropPos.x}% ${cropPos.y}%`;
 
           return (
-            <div className="feed-post" key={slot.id}>
+            <div className="feed-post" id={`post-card-${slot.id}`} key={slot.id}>
               <div className="feed-post-header">
                 <div className="feed-post-meta">
                   <strong>{formatDate(baseDate, slot.dayOffset)}</strong>
