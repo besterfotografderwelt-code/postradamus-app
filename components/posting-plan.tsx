@@ -194,29 +194,6 @@ async function regenerateCaptionForTone(
   return { caption: data.caption, hashtags: data.hashtags || "" };
 }
 
-const weddingCaptions = [
-  "Manche Momente brauchen keine große Bühne, nur gutes Licht und einen ehrlichen Blick. Genau dann entstehen Bilder, die später wieder fühlbar sind.",
-  "Wenn Sekunden zu Erinnerungen werden, bleibt nicht nur ein Foto, sondern ein ganzes Gefühl zurück. Das ist der Teil, der am längsten trägt.",
-  "Echte Gefühle, echte Bilder, echte Nähe. Mehr braucht es oft nicht, damit ein Tag später noch einmal auflebt.",
-  "Hinter jedem Bild steckt ein kleiner Moment, der im richtigen Augenblick sichtbar geworden ist. Genau daraus entsteht eine starke Reportage.",
-  "Authentisch, nah und zeitlos erzählt. So wirken Bilder nicht nur heute gut, sondern auch noch in vielen Jahren.",
-  "Die Details machen den Unterschied, weil sie einem Tag Charakter geben und die Geschichte zwischen den großen Momenten erzählen.",
-  "Von ruhig bis ausgelassen, von leise bis laut. Diese Mischung macht Hochzeitsbilder lebendig und glaubwürdig.",
-  "Danke für diesen besonderen Tag. Wenn Liebe, Freude und gute Menschen zusammenkommen, bleibt das in Bildern lange spürbar.",
-  "Ein Tag voller Liebe und Licht, mit kleinen Augenblicken, die im Rückblick oft die größte Wirkung haben.",
-  "Das sind die Momente, die zählen: echte Blicke, kleine Gesten und all das, was man nicht inszenieren kann.",
-  "Weniger Worte, mehr Gefühl. Genau deshalb dürfen gute Bilder Raum lassen und trotzdem sofort berühren.",
-  "So fühlt sich echtes Glück an, wenn es nicht perfekt inszeniert, sondern ehrlich erlebt wurde.",
-  "Wenn Bilder sprechen lernen, erzählen sie nicht nur, was passiert ist, sondern auch, wie es sich angefühlt hat.",
-  "Pure Magie in jedem Frame, weil Licht, Timing und Emotion zusammen den Unterschied machen.",
-  "Unvergesslich, ungefiltert und echt. So bleibt ein Hochzeitstag nicht nur schön, sondern lebendig.",
-  "Diese Blicke sagen alles, auch dann noch, wenn längst wieder Ruhe eingekehrt ist.",
-  "Mehr als nur Fotos, eher eine Erinnerung, die man immer wieder neu aufrufen kann.",
-  "Timeless moments, captured forever, damit aus einem einzelnen Tag eine Geschichte für viele Jahre wird.",
-  "Ein Hochzeitstag wie im Film, nur ohne Drehbuch und genau deshalb so besonders.",
-  "Love is in the details, und genau diese Details machen den Tag einzigartig.",
-];
-
 const weddingHashtagSets = [
   "#hochzeitsfotografie #weddinginspiration #brautpaar #hochzeitsreportage #echtemomente #weddingday #hochzeit #love",
   "#hochzeitsreportage #echtemomente #weddingday #hochzeitsliebe #weddingstory #brautpaar #hochzeitsinspiration #hochzeit2026",
@@ -240,29 +217,6 @@ const weddingHashtagSets = [
   "#hochzeitsideen #weddingplanning #inspo #hochzeitsinspiration #weddingphotography #echtemomente #brautpaar #love",
 ];
 
-const fitnessCaptions = [
-  "Jede Wiederholung bringt dich weiter. Genau darum geht es: nicht perfekt sein, sondern konsequent bleiben. 💪",
-  "Fortschritt sieht nicht jeden Tag gleich aus, aber er ist immer da, wenn du genau hinschaust.",
-  "Der beste Zeitpunkt war gestern. Der zweitbeste ist jetzt. Dein nächstes Level wartet nicht.",
-  "Muskelkater ist nur Schwäche, die den Körper verlässt. Weiter geht's.",
-  "Kein Filter, keine Inszenierung, nur echte Arbeit. So entsteht echte Veränderung.",
-  "Ziele erreicht man nicht mit Ausreden, sondern mit Wiederholungen.",
-  "Die einzige Person, die du schlagen musst, bist du selbst von gestern.",
-  "Stärke kommt nicht vom Zuschauen. Sie kommt vom Machen, vom Durchhalten, vom Dranbleiben.",
-  "Training ist nicht nur körperlich. Es formt auch den Kopf und macht ihn klar.",
-  "Kleine Fortschritte sind immer noch Fortschritte. Notier sie, feier sie, bleib dran.",
-  "Wenn du denkst, es geht nicht mehr, kommen noch drei Wiederholungen. Und genau die zählen.",
-  "Disziplin ist die Brücke zwischen Zielen und Ergebnissen. Heute wieder ein Stück näher.",
-  "Fitness ist kein Projekt mit Ablaufdatum. Es ist ein Lebensstil, der dich jeden Tag besser macht.",
-  "Schweiß ist nur Fett, das weint. Und heute wurde wieder ordentlich geweint.",
-  "Nicht vergleichen, sondern fokussieren. Dein Weg, dein Tempo, dein Erfolg.",
-  "Ein leerer Studios ist am Morgen, ein voller am Abend. Dazwischen liegt echte Arbeit.",
-  "Die beste Investition ist die in deine Gesundheit. Alles andere kommt danach.",
-  "Ergebnisse kommen nicht über Nacht, aber sie kommen. Garantiert, wenn du bleibst.",
-  "Dein Körper kann fast alles. Du musst ihn nur überzeugen, dass du es ernst meinst.",
-  "Mental stark, körperlich stärker. So fühlt sich der Weg an, wenn er sich lohnt.",
-];
-
 const fitnessHashtags = [
   "#fitness #training #motivation #workout #gymlife #fitfam #fitnessmotivation #healthylifestyle #personaltrainer #coaching",
   "#workoutmotivation #gym #fitnessstudio #krafttraining #trainingsplan #fitnessgoal #progress #strong #disziplin #fit",
@@ -276,24 +230,6 @@ const fitnessHashtags = [
   "#gesundheit #wohlbefinden #selbstfürsorge #healthylife #bewegung #sport #aktiv #energie #vitalität #lebensfreude",
 ];
 
-const restaurantCaptions = [
-  "Hier schmeckt man, worum es wirklich geht: Handwerk, Leidenschaft und gute Zutaten. Genau so soll Essen sein.",
-  "Die besten Gespräche entstehen bei gutem Essen. Wir haben den Tisch schon gedeckt.",
-  "Von der Küche bis zum Teller: Jeder Handgriff zählt und schmeckt man am Ende.",
-  "Regionale Zutaten, ehrliche Zubereitung und eine Atmosphäre, die bleibt.",
-  "Gutes Essen braucht keine Show, nur Respekt vor dem Produkt und Zeit.",
-  "Das Auge isst mit, aber der Geschmack bleibt. Deshalb legen wir auf beides wert.",
-  "Zwischen Vorspeise und Dessert liegt oft der beste Abend der Woche.",
-  "Handwerk beginnt in der Küche und endet auf deinem Teller. Heute wieder mit viel Liebe gemacht.",
-  "Saisonal, regional, ehrlich. Das ist nicht nur ein Spruch bei uns, sondern der Plan.",
-  "Gastgeber sein bedeutet mehr als nur kochen. Es bedeutet, eine Auszeit zu schenken.",
-  "Ein voller Tisch, ein zufriedener Gast und ein Team, das weiß, was es tut.",
-  "Qualität merkst du beim ersten Bissen und erinnerst dich beim letzten.",
-  "Küche ist kein Geheimnis, sondern Handwerk mit Herz. Bei uns kannst du zusehen.",
-  "Vom Markt bis auf den Teller dauert es bei uns keine Umwege. Das schmeckt man.",
-  "Ambiente, Service, Geschmack - alles muss stimmen, damit es ein perfekter Abend wird.",
-];
-
 const restaurantHashtags = [
   "#restaurant #gastro #gastronomie #food #genuss #küche #restauranttipp #essen #lecker #foodfotografie",
   "#regional #saisonal #frischeküche #qualität #handwerk #kochen #küchenchef #gourmet #geniessen #ausgehen",
@@ -303,41 +239,11 @@ const restaurantHashtags = [
   "#teamküche #küchenliebe #kochkunst #plating #foodstyling #angerichtet #tellerliebe #foodgram #instayummy #kulinarik",
 ];
 
-const productCaptions = [
-  "Form, Funktion und der erste Eindruck, der sitzt. Genau so muss ein Produkt wirken.",
-  "Qualität, die man sieht und spürt. Keine leeren Versprechungen, sondern echte Details.",
-  "Die Magie steckt im Detail. Deshalb zeigen wir, was andere übersehen.",
-  "Handwerk, das hält, was es verspricht. Von der Idee bis zum fertigen Stück.",
-  "Clean, präzise und mit klarem Fokus auf das Wesentliche.",
-  "Gutes Design braucht keine Erklärung. Es spricht für sich selbst.",
-  "Ein Produkt, das überzeugt, braucht keine lauten Worte. Nur eine saubere Präsentation.",
-  "Von der Verarbeitung bis zur Haptik: Hier sieht man den Unterschied.",
-  "Ehrliche Materialien, klare Linien und eine Form, die ihren Zweck erfüllt.",
-  "Was gut gemacht ist, darf man zeigen. Und zwar von allen Seiten.",
-  "Jedes Detail erzählt eine Geschichte über die Arbeit, die darin steckt.",
-  "Bevor es in deine Hände kommt, war es unsere Leidenschaft.",
-];
-
 const productHashtags = [
   "#produktfotografie #produkt #design #handwerk #qualität #branding #ecommerce #detail #madeinaustria #shoplocal",
   "#produktdesign #verarbeitung #material #clean #minimal #ästhetik #productphotography #productshot #brand #business",
   "#handmade #craftmanship #details #productlaunch #newproduct #innovation #qualität #premium #wertig #marke",
   "#produktfoto #produktpräsentation #onlineshop #shopify #etailment #katalog #lookbook #kollektion #neuheit #produktion",
-];
-
-const genericCaptions = [
-  "Wir zeigen, was wirklich wichtig ist: echte Einblicke, klare Werte und keine Inszenierung.",
-  "Hinter jedem Projekt stecken Menschen mit einer Vision. Hier siehst du einen Teil davon.",
-  "Die besten Ergebnisse entstehen, wenn man genau hinschaut und den Mut zum Wesentlichen hat.",
-  "Was zählt, ist nicht die große Show, sondern der echte Mehrwert. Den zeigen wir hier.",
-  "Transparenz, Qualität und der Blick fürs Detail. Das sind keine Buzzwords, das ist unser Anspruch.",
-  "Ein Einblick, der zeigt, worauf es ankommt. Ohne Filter, ohne Übertreibung.",
-  "Manche Momente muss man nicht erklären. Sie zeigen sich von selbst, wenn man genau hinsieht.",
-  "Der Unterschied liegt oft im Detail. Und das feiern wir hier ohne große Worte.",
-  "Was uns ausmacht, sieht man nicht auf den ersten Blick. Aber auf den zweiten sofort.",
-  "Erfolg ist kein Zufall, sondern die Summe vieler guter Entscheidungen.",
-  "Nicht mehr, sondern besser. Das zieht sich durch alles, was wir tun.",
-  "Echt, direkt und ohne Umwege. So kommunizieren wir seit Tag eins.",
 ];
 
 const genericHashtagSets = [
@@ -360,79 +266,15 @@ function generatePostSlots(images: ProjectImage[], tone: string, businessType = 
   function pick(n: number) { return all.filter((img) => !usedImages.has(img.id)).slice(0, n); }
   function mark(imgs: ProjectImage[]) { imgs.forEach((img) => usedImages.add(img.id)); }
 
-  // Tone-variant captions
-  const toneKey = normalizeTone(tone);
-  const toneCaptions: Record<string, string[]> = {
-    romantisch: [
-      "Ein Tag, zwei Herzen und viele kleine Momente, die sich im Rückblick wie ein einziger schöner Film anfühlen.",
-      "Wenn Blicke mehr sagen als Worte, entsteht genau diese stille, warme Art von Romantik, die man nicht planen kann.",
-      "Für die Ewigkeit erzählt, ohne laut zu sein. Genau das macht solche Bilder so stark.",
-      "Romantik in jedem Frame, weil Nähe oft in den kleinen Gesten steckt, nicht in großen Posen.",
-      "Liebe pur, aber ehrlich und unaufgeregt. So bleibt es zeitlos.",
-    ],
-    lustig: [
-      "Lachen ist die beste Trauung, vor allem wenn der Tag genauso lebendig wird, wie er begonnen hat.",
-      "Erst Ja, dann Party. Genau in dieser Reihenfolge und bitte mit viel guter Laune.",
-      "Verheiratet und immer noch mit Humor. Das sind die besten Voraussetzungen für starke Bilder.",
-      "Der lustigste Tag ever, festgehalten zwischen schönen Details und sehr viel Bewegung.",
-      "Tanzfläche zerstört, Stimmung gerettet. So soll ein Abend aussehen.",
-    ],
-    emotional: [
-      "Gänsehaut-Garantie, weil echte Emotionen nicht gestellt wirken müssen, um stark zu sein.",
-      "Tränen aus Glück sind oft die stillsten, aber genau deshalb bleiben sie so lange im Kopf.",
-      "Dieser Moment für immer: nicht perfekt inszeniert, aber genau richtig gefühlt.",
-      "Herz über Kopf, und genau deshalb so unvergesslich.",
-      "Manche Tage vergisst man nie, weil sie sich schon in der Kamera besonders angefühlt haben.",
-    ],
-    modern: [
-      "Clean, echt und zeitlos, damit die Bildsprache ruhig bleibt und trotzdem sofort wirkt.",
-      "Minimal, maximal auf Wirkung reduziert. Mehr braucht es oft nicht.",
-      "Weniger ist mehr, wenn Licht, Komposition und Timing sauber zusammenspielen.",
-      "Elegant und unkompliziert, aber nie beliebig.",
-      "Moderne Liebesgeschichte mit klarer Bildsprache und viel Raum für echte Momente.",
-    ],
-    kurz: [
-      "Perfekt, wenn man es klar und ohne Umwege auf den Punkt bringen will.",
-      "Einfach schön, und manchmal ist genau das schon die beste Beschreibung.",
-      "Ein Bild, ein Gefühl, ein klarer Moment.",
-      "Kurz gesagt: Liebe, Licht und ein sauberer Augenblick.",
-      "Das war's. Und trotzdem steckt in solchen Momenten oft am meisten.",
-    ],
-    motivierend: [
-      "Du schaffst das, weil Konstanz am Ende immer sichtbare Spuren hinterlässt.",
-      "Ein Schritt nach dem anderen reicht, solange man weitergeht.",
-      "Ein guter Moment startet oft dort, wo man dranbleibt.",
-      "Dranbleiben lohnt sich, besonders wenn das Ergebnis so sauber und stark aussieht.",
-      "Das sieht nach Rückenwind aus, und genau so darf es weitergehen.",
-    ],
-    informativ: [
-      "Kurz zusammengefasst: Hier geht es um klare Bildsprache und nachvollziehbare Momente.",
-      "Ein kleiner Einblick, wie aus vielen Einzelbildern eine stimmige Geschichte wird.",
-      "Was man hier sieht, sind echte Momente mit einem sauberen roten Faden.",
-      "Ein Blick in den Ablauf, damit sichtbar wird, wie die Story aufgebaut ist.",
-      "So entsteht die Story: ruhig, strukturiert und ohne unnötige Effekte.",
-    ],
-    lässig: [
-      "Locker, echt und ohne Chichi, damit die Stimmung genauso rüberkommt, wie sie war.",
-      "Einfach laufen lassen und genau die Momente festhalten, die natürlich entstehen.",
-      "Ganz entspannt festgehalten, mit genug Luft für echte Bewegung und echte Mimik.",
-      "Nichts gestellt, alles echt. So bleibt der Look glaubwürdig.",
-      "So fühlt sich der Tag an: leicht, nahbar und ohne Drama.",
-    ],
-  };
-  const baseCaptions = isWeddingBusiness ? weddingCaptions
-    : normalizedBusinessType === "fitness" ? fitnessCaptions
-    : normalizedBusinessType === "restaurant" ? restaurantCaptions
-    : normalizedBusinessType === "produktfotograf" ? productCaptions
-    : genericCaptions;
   const baseHashtags = isWeddingBusiness ? weddingHashtagSets
     : normalizedBusinessType === "fitness" ? fitnessHashtags
     : normalizedBusinessType === "restaurant" ? restaurantHashtags
     : normalizedBusinessType === "produktfotograf" ? productHashtags
     : genericHashtagSets;
-  const activeCaptions = [""];
+
   function nextCaption() { return ""; }
 
+  const toneKey = normalizeTone(tone);
   const weddingStoryCaptions: Record<string, string[]> = {
     romantisch: ["Hinter den Kulissen der Liebe, wo die stillen Sekunden oft schon die schönste Stimmung tragen.", "Ein kleiner Blick vor dem großen Moment, bevor die eigentliche Geschichte beginnt.", "Leise Vorfreude, große Gefühle und genau die Ruhe, die man später noch spürt."],
     lustig: ["Backstage mit Chaos und Charme, weil die besten Geschichten selten perfekt sortiert sind.", "Kurz hinter den Kulissen, bevor aus Vorbereitung endlich Feier wird.", "Noch schnell ein Blick vor dem Ja-Wort und dann darf es auch losgehen."],

@@ -21,22 +21,6 @@ function isValidRequest(body: GenerateRequest): boolean {
   );
 }
 
-function readOutputText(payload: unknown): string {
-  if (!payload || typeof payload !== "object") return "";
-  const response = payload as {
-    output_text?: unknown;
-    output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
-  };
-  if (typeof response.output_text === "string") return response.output_text.trim();
-
-  return (response.output ?? [])
-    .flatMap((item) => item.content ?? [])
-    .filter((item) => item.type === "output_text" && typeof item.text === "string")
-    .map((item) => item.text?.trim())
-    .filter(Boolean)
-    .join("\n\n");
-}
-
 function readChatCompletionText(payload: unknown): string {
   if (!payload || typeof payload !== "object") return "";
   const response = payload as {
@@ -44,47 +28,6 @@ function readChatCompletionText(payload: unknown): string {
   };
   const content = response.choices?.[0]?.message?.content;
   return typeof content === "string" ? content.trim() : "";
-}
-
-async function generateWithDeepSeek(prompt: string, businessType?: string) {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) return "";
-
-  const branche = businessType || "Unternehmen";
-  const baseUrl = (process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com").replace(/\/$/, "");
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash",
-      messages: [
-        {
-          role: "system",
-          content: `Du schreibst Instagram-Captions in der ICH-Form. STRIKTES VERBOT: WIR, uns, unser. VERBOTENE WÖRTER: Inmitten, Umarmung, Herz, Herzen, blühend, Pracht, Zauber, märchenhaft, unvergesslich, Magie, traumhaft. SCHREIB WIE EIN ECHTER MENSCH. Keine KI-Phrasen. Keine poetischen Floskeln. Kurze Sätze. Authentisch. Direkt. Nahbar. Branche: ${branche}.`
-        },
-        { role: "user", content: prompt }
-      ],
-      max_tokens: 1400,
-      temperature: 1.0,
-      frequency_penalty: 1.5,
-      presence_penalty: 1.5
-    }),
-    signal: AbortSignal.timeout(45_000)
-  });
-
-  const payload: unknown = await response.json();
-  if (!response.ok) {
-    const message =
-      payload && typeof payload === "object" && "error" in payload
-        ? JSON.stringify(payload.error)
-        : "DeepSeek-Anfrage fehlgeschlagen.";
-    throw new Error(message);
-  }
-
-  return readChatCompletionText(payload);
 }
 
 export async function POST(request: Request) {
