@@ -230,7 +230,7 @@ export function ContentStudio({ project, images, onFirstOutput }: ContentStudioP
           </div>
           {output ? (
             <>
-              <PostingPlan images={images} onPlanChange={setPlannedPosts} tone={tone} businessType={project.businessType} />
+              <PostingPlan images={images} onPlanChange={setPlannedPosts} tone={tone} businessType={project.businessType} projectId={project.id} />
               <div className="publish-actions publish-final" style={{ marginTop: 28 }}>
                 <button className="button publish-button" disabled={isPosting} onClick={publishToInstagram} type="button">
                   {isPosting ? "Postet ..." : "Jetzt posten!"}
