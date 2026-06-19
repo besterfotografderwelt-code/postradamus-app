@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const businessTypes = [
   { id: "restaurant", label: "Restaurant / Café", icon: "🍽️", tags: ["Gerichte", "Interior", "Team", "Gäste", "Zubereitung", "Angebote"] },
@@ -101,6 +101,15 @@ type StyleProfile = {
 
 export default function OnboardingPage() {
   const router = useRouter();
+
+  // Onboarding zurücksetzen via ?reset=1
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("reset=1")) {
+      localStorage.removeItem("flowstream.onboarding");
+      window.history.replaceState({}, "", "/onboarding");
+    }
+  }, []);
+
   const [step, setStep] = useState<"type" | "name" | "style" | "done">("type");
   const [businessType, setBusinessType] = useState("");
   const [businessName, setBusinessName] = useState("");
