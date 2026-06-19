@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { WaitlistForm } from "./waitlist-form";
 
 const benefits = [
   {
@@ -222,9 +223,10 @@ export function LandingPage() {
       <section className="landing-final">
         <h2>Bereit für automatisiertes Posten?</h2>
         <p>Starte kostenlos und sieh selbst, wie Postradamus deine Posts automatisch plant.</p>
-        <Link className="button" href="/login?trial=14">
-          14 Tage gratis testen
-        </Link>
+        <WaitlistForm />
+        <p className="helper" style={{ marginTop: 12 }}>
+          Oder <Link href="/login?trial=14">direkt ein Konto erstellen</Link>
+        </p>
       </section>
     </div>
   );

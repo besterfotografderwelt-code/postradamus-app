@@ -2531,3 +2531,115 @@ h3 { font-size: 1.15rem; }
   .cadence-panel { min-width: unset; width: 100%; }
   .posting-plan-header { flex-direction: column; align-items: flex-start; }
 }
+
+/* ── Waitlist Form ── */
+.waitlist-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.waitlist-input-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.waitlist-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 15px;
+  outline: none;
+  background: var(--panel);
+}
+.waitlist-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.waitlist-button {
+  white-space: nowrap;
+  padding: 12px 24px;
+  border-radius: 12px;
+}
+.waitlist-message {
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+.waitlist-message.is-success {
+  color: var(--good);
+}
+.waitlist-message.is-error {
+  color: var(--error);
+}
+.landing-final .helper a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* ── Admin Stats ── */
+.admin-stats h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.stat-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.stat-card.is-good {
+  border-color: var(--good);
+}
+.stat-card.is-bad {
+  border-color: var(--error);
+}
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+.stat-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 12px;
+}
+.stats-table th,
+.stats-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.stats-table th {
+  font-weight: 600;
+  color: var(--muted);
+}
+.stats-table code {
+  font-size: 13px;
+  background: var(--accent-soft);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.status-badge.is-ready {
+  color: var(--good);
+}
+.status-badge.is-warning {
+  color: #b8860b;
+}
