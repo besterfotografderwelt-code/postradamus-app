@@ -12,7 +12,7 @@ const pricingPlans = [
   {
     name: "Starter",
     price: "29,90 €",
-    description: "Für kleine Accounts, die endlich regelmäßig posten wollen.",
+    description: "Kleine Accounts, die endlich regelmäßig posten wollen.",
     quota: "50 Bilder pro Monat",
     highlights: ["KI-Captions und Hashtags", "Postingplan", "Instagram-Vorschau"],
     href: "/login?trial=14&plan=starter",
@@ -20,7 +20,7 @@ const pricingPlans = [
   {
     name: "Growth",
     price: "49,90 €",
-    description: "Für alle mit regelmäßigem Content-Rhythmus – Creator, Selbstständige, Teams.",
+    description: "Creator, Selbstständige und Teams mit regelmäßigem Content.",
     quota: "150 Bilder pro Monat",
     highlights: [
       "Alles aus Starter",
@@ -33,7 +33,7 @@ const pricingPlans = [
   {
     name: "Studio",
     price: "129,90 €",
-    description: "Für Teams, Agenturen und Accounts mit viel Bildmaterial.",
+    description: "Agenturen und Accounts mit viel Bildmaterial.",
     quota: "Unlimitiert mit Fair-Use",
     highlights: [
       "Alles aus Growth",
