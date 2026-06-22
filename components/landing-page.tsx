@@ -88,10 +88,10 @@ export function LandingPage() {
     <div className="landing-page">
       <section className="landing-hero">
         <div className="landing-hero-copy">
-          <h1>Dein <span className="nowrap">Social‑Media‑Agent.</span></h1>
+          <h1>Dein Social‑Media‑Agent.</h1>
           <p>
             Postradamus schreibt Captions, plant die Woche und postet automatisch.
-            Du lädst nur deine Bilder hoch – den Rest macht dein Agent.
+            Du lädst deine Bilder hoch – den Rest macht dein Agent.
           </p>
           <div className="landing-actions">
             <Link className="button landing-primary" href="/login?trial=14">
