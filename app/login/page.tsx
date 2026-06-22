@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -12,15 +13,26 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  function readForm(): { email: string; password: string; fullName: string } {
+    if (!formRef.current) return { email: "", password: "", fullName: "" };
+    const fd = new FormData(formRef.current);
+    return {
+      email: String(fd.get("email") ?? "").trim(),
+      password: String(fd.get("password") ?? ""),
+      fullName: String(fd.get("fullName") ?? "").trim(),
+    };
+  }
+
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
+    const { email: e, password: p } = readForm();
     try {
       const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: e, password: p }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -42,11 +54,12 @@ export default function LoginPage() {
     setError("");
     setMessage("");
     setLoading(true);
+    const { email: e, password: p, fullName: n } = readForm();
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password, fullName: name.trim() }),
+        body: JSON.stringify({ email: e, password: p, fullName: n }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -72,7 +85,7 @@ export default function LoginPage() {
         {error && <div className="form-message form-message-error">{error}</div>}
         {message && <div className="form-message form-message-success">{message}</div>}
 
-        <form className="form" onSubmit={handleSignIn}>
+        <form className="form" ref={formRef} onSubmit={handleSignIn}>
           <div className="field">
             <label htmlFor="fullName">Name oder Studio</label>
             <input
