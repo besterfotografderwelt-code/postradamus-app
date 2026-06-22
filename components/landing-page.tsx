@@ -88,6 +88,16 @@ export function LandingPage() {
     <div className="landing-page">
       <section className="landing-hero">
         <div className="landing-hero-copy">
+          <div className="landing-brand-lockup">
+            <Image
+              alt=""
+              className="landing-brand-logo"
+              height={256}
+              src="/brand/postradamus-mark.png"
+              width={219}
+            />
+            <span>Postradamus</span>
+          </div>
           <h1>Dein persönlicher Social-Media-Agent.</h1>
           <p>
             Lade deine Bilder hoch – Postradamus schreibt Captions, plant die Woche
