@@ -2017,6 +2017,8 @@ h3 { font-size: 1.15rem; }
 .landing-hero-copy {
   position: relative;
   z-index: 1;
+  max-width: 520px;
+  padding-right: clamp(16px, 3vw, 40px);
 }
 .landing-brand-lockup {
   display: inline-flex;
@@ -2041,9 +2043,9 @@ h3 { font-size: 1.15rem; }
   letter-spacing: 0;
 }
 .landing-hero h1 {
-  max-width: 12ch;
-  margin: 0 0 22px;
-  font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+  max-width: 16ch;
+  margin: 0 0 24px;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
   line-height: 1.15;
   letter-spacing: -.02em;
 }
