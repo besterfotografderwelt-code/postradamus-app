@@ -78,7 +78,7 @@ test("gespeicherte Projekte werden beim Öffnen nicht überschrieben", async ({ 
 test("Startseite verkauft Postradamus mit Testphase", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Instagram-Posts. Fertig geplant." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Instagram, das einfach läuft. Vollautomatisch." })).toBeVisible();
   await expect(page.getByRole("link", { name: "14 Tage gratis testen" }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Alle Preise ansehen" })).toBeVisible();
 });

@@ -88,11 +88,10 @@ export function LandingPage() {
     <div className="landing-page">
       <section className="landing-hero">
         <div className="landing-hero-copy">
-          <h1>Deine Posts perfekt für die Zukunft automatisiert.</h1>
+          <h1>Instagram, das einfach läuft. Vollautomatisch.</h1>
           <p>
-            Bilder hochladen, Stil wählen – Postradamus übernimmt den Rest automatisch.
-            Kein Getüftel an Captions, kein Stress mit Hashtags. Du sparst Zeit, Nerven
-            und postest trotzdem jeden Tag wie ein Profi.
+            Du lädst Fotos hoch – Postradamus schreibt Captions, plant deine Woche
+            und postet. Jeden Tag sichtbar, null Aufwand, mehr Reichweite.
           </p>
           <div className="landing-actions">
             <Link className="button landing-primary" href="/login?trial=14">
