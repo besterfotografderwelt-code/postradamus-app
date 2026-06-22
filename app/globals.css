@@ -2044,7 +2044,8 @@ h3 { font-size: 1.15rem; }
 .landing-hero h1 {
   max-width: 18ch;
   margin: 0 0 22px;
-  font-size: clamp(2.8rem, 7vw, 5.8rem);
+  font-size: clamp(2.2rem, 5.5vw, 4.5rem);
+  line-height: 1.1;
 }
 .nowrap { white-space: nowrap; }
 .landing-hero p {
