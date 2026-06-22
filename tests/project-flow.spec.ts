@@ -31,11 +31,12 @@ async function seedOnboarding(page: Page, withStyleProfile = false) {
   }
 }
 
-test("Login zeigt ohne Supabase-Konfiguration den Demo-Modus", async ({ page }) => {
+test("Login-Seite zeigt Anmeldeformular", async ({ page }) => {
   await page.goto("/login");
 
-  await expect(page.getByRole("button", { name: "Anmelden" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Konto erstellen" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Anmelden" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Konto erstellen" })).toBeVisible();
+  await expect(page.getByPlaceholder("Tobias Köstl")).toBeVisible();
 });
 
 test("gespeicherte Projekte werden beim Öffnen nicht überschrieben", async ({ page }) => {
