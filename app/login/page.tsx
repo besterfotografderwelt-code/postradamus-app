@@ -23,16 +23,16 @@ export default function LoginPage() {
     };
   }
 
-  async function handleSignIn(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSignIn(ev: React.FormEvent) {
+    ev.preventDefault();
     setError("");
     setLoading(true);
-    const { email: e, password: p } = readForm();
+    const { email: mail, password: pw } = readForm();
     try {
       const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: e, password: p }),
+        body: JSON.stringify({ email: mail, password: pw }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -49,17 +49,17 @@ export default function LoginPage() {
     }
   }
 
-  async function handleSignUp(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSignUp(ev: React.FormEvent) {
+    ev.preventDefault();
     setError("");
     setMessage("");
     setLoading(true);
-    const { email: e, password: p, fullName: n } = readForm();
+    const { email: mail, password: pw, fullName: n } = readForm();
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: e, password: p, fullName: n }),
+        body: JSON.stringify({ email: mail, password: pw, fullName: n }),
       });
       const data = await res.json();
       if (!res.ok) {
