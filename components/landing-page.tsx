@@ -78,8 +78,8 @@ const faqs = [
     answer: "Ja. Caption, Stil, markierte Accounts, Hashtags, Bildbeschnitt und Bildauswahl bleiben editierbar."
   },
   {
-    question: "Ist die Bezahlung schon live?",
-    answer: "Kreditkarte und PayPal sind als Zahlungsarten vorgesehen. Sobald der Service live geht, kannst du direkt bezahlen."
+    question: "Wie kann ich bezahlen?",
+    answer: "Nach deiner 14-tägigen Testphase wählst du dein Paket und bezahlst bequem per Kreditkarte oder PayPal."
   }
 ];
 

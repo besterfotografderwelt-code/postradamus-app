@@ -62,7 +62,7 @@ const faqGroups = [
         answer: "Ja. Alle Pakete sind monatlich kündbar – ohne lange Vertragsbindung."
       },
       {
-        question: "Welche Zahlungsarten sind geplant?",
+        question: "Welche Zahlungsarten gibt es?",
         answer: "Kreditkarte und PayPal stehen zur Auswahl."
       }
     ]

@@ -12,7 +12,7 @@ const pricingPlans = [
   {
     name: "Starter",
     price: "29,90 €",
-    description: "Kleine Accounts, die endlich regelmäßig posten wollen.",
+    description: "Für kleine Accounts, die endlich regelmäßig posten wollen.",
     quota: "50 Bilder pro Monat",
     highlights: ["KI-Captions und Hashtags", "Postingplan", "Instagram-Vorschau"],
     href: "/login?trial=14&plan=starter",
@@ -20,7 +20,7 @@ const pricingPlans = [
   {
     name: "Growth",
     price: "49,90 €",
-    description: "Creator, Selbstständige und Teams mit regelmäßigem Content.",
+    description: "Für Creator und Selbstständige mit regelmäßigem Content.",
     quota: "150 Bilder pro Monat",
     highlights: [
       "Alles aus Starter",
@@ -33,7 +33,7 @@ const pricingPlans = [
   {
     name: "Studio",
     price: "129,90 €",
-    description: "Agenturen und Accounts mit viel Bildmaterial.",
+    description: "Für Agenturen und Studios mit besonders viel Bildmaterial.",
     quota: "Unlimitiert mit Fair-Use",
     highlights: [
       "Alles aus Growth",
@@ -56,9 +56,9 @@ const faqs = [
       "Ja. Caption, Stil, markierte Accounts, Hashtags, Bildbeschnitt und Bildauswahl bleiben editierbar.",
   },
   {
-    question: "Ist die Bezahlung schon live?",
+    question: "Wie kann ich bezahlen?",
     answer:
-      "Kreditkarte und PayPal sind als Zahlungsarten vorgesehen. Sobald der Service live geht, kannst du direkt bezahlen.",
+      "Nach deiner 14-tägigen Testphase wählst du dein Paket und bezahlst bequem per Kreditkarte oder PayPal.",
   },
 ];
 
@@ -84,7 +84,7 @@ export default function PreisePage() {
               {plan.featured && (
                 <span className="pricing-label">Empfohlen</span>
               )}
-              <div>
+              <div className="pricing-card-head">
                 <h2>{plan.name}</h2>
                 <p>{plan.description}</p>
               </div>
@@ -103,6 +103,98 @@ export default function PreisePage() {
           ))}
         </div>
 
+
+      </section>
+
+      <section className="landing-section">
+        <div className="landing-section-head">
+          <div className="eyebrow">Vergleich</div>
+          <h2>Alle Funktionen im Überblick.</h2>
+        </div>
+
+        <div className="compare-table-wrap">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th />
+                <th>Starter</th>
+                <th className="compare-featured">Growth</th>
+                <th>Studio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Bilder pro Monat</td>
+                <td>50</td>
+                <td className="compare-featured">150</td>
+                <td>Unlimited*</td>
+              </tr>
+              <tr>
+                <td>KI-Captions &amp; Hashtags</td>
+                <td>✓</td>
+                <td className="compare-featured">✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Postingplan</td>
+                <td>✓</td>
+                <td className="compare-featured">✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Instagram-Vorschau</td>
+                <td>✓</td>
+                <td className="compare-featured">✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Direkte Instagram-Veröffentlichung</td>
+                <td>✓</td>
+                <td className="compare-featured">✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Feed &amp; Carousel</td>
+                <td>✓</td>
+                <td className="compare-featured">✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Stories</td>
+                <td>✓</td>
+                <td className="compare-featured">✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>9 Tonalitäten</td>
+                <td>✓</td>
+                <td className="compare-featured">✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Mehrere Projekte gleichzeitig</td>
+                <td>1 Projekt</td>
+                <td className="compare-featured">3 Projekte</td>
+                <td>10 Projekte</td>
+              </tr>
+              <tr>
+                <td>Eigener Schreibstil (Style-Analyse)</td>
+                <td>–</td>
+                <td className="compare-featured">✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Priorität für neue Funktionen</td>
+                <td>–</td>
+                <td className="compare-featured">–</td>
+                <td>✓</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="helper" style={{ marginTop: 12 }}>
+            * Fair-Use: großzügig ausgelegt, schützt vor automatisierter Massennutzung.
+          </p>
+        </div>
 
       </section>
 

@@ -17,11 +17,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <h2>Zugang zu Postradamus</h2>
         </div>
 
-        {!configured && (
-          <div className="form-message form-message-warning">
-            Der Login ist noch nicht live geschaltet. Wir arbeiten daran – in Kürze kannst du dich hier registrieren.
-          </div>
-        )}
         {error && <div className="form-message form-message-error">{error}</div>}
         {message && <div className="form-message form-message-success">{message}</div>}
 

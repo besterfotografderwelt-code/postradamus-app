@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { getOutputRepository } from "@/lib/repositories/get-output-repository";
 import { PostingPlan, type PlannedPost } from "@/components/posting-plan";
 import { type ProjectImage, type ProjectOutput, type WeddingProject } from "@/lib/types";
@@ -239,7 +240,19 @@ export function ContentStudio({ project, images, onFirstOutput }: ContentStudioP
                   <div className={`post-result-card ${postResult.startsWith("🎉") ? "post-success" : postResult.startsWith("❌") ? "post-error" : "post-info"}`}>
                     <div className="post-result-icon">{postResult.startsWith("🎉") ? "🎉" : postResult.startsWith("❌") ? "😕" : "📋"}</div>
                     <p>{postResult}</p>
-                    {postResult.startsWith("🎉") ? <p className="post-result-sub">Dein Post ist jetzt live auf Instagram!</p> : null}
+                    {postResult.startsWith("🎉") ? (
+                      <>
+                        <p className="post-result-sub">Deine Posts sind jetzt live auf Instagram!</p>
+                        <div className="post-result-actions">
+                          <Link className="button-secondary" href="/projects" style={{ fontSize: ".9rem" }}>
+                            Zur Projektübersicht
+                          </Link>
+                          <Link className="button" href="/projects/new" style={{ fontSize: ".9rem" }}>
+                            Nächstes Projekt
+                          </Link>
+                        </div>
+                      </>
+                    ) : null}
                   </div>
                 ) : null}
               </div>

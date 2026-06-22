@@ -34,7 +34,6 @@ async function seedOnboarding(page: Page, withStyleProfile = false) {
 test("Login zeigt ohne Supabase-Konfiguration den Demo-Modus", async ({ page }) => {
   await page.goto("/login");
 
-  await expect(page.getByText("Der Login ist noch nicht live geschaltet")).toBeVisible();
   await expect(page.getByRole("button", { name: "Anmelden" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Konto erstellen" })).toBeDisabled();
 });

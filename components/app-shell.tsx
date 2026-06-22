@@ -18,6 +18,7 @@ export async function AppShell({ children }: AppShellProps) {
   const navLinks: Array<{ href: string; label: string; primary?: boolean }> = [
     { href: "/", label: "Start" },
     { href: "/preise", label: "Preise" },
+    { href: "/vergleich", label: "Vergleich" },
     { href: "/kundenbereich", label: "Kundenbereich" },
     { href: "/faq", label: "FAQ" },
     { href: "/kontakt", label: "Kontakt" },
@@ -42,6 +43,7 @@ export async function AppShell({ children }: AppShellProps) {
         </div>
         <nav aria-label="Rechtliches und Kontakt">
           <Link href="/kontakt">Kontakt</Link>
+          <Link href="/vergleich">Vergleich</Link>
           <Link href="/faq">FAQ</Link>
           <Link href="/agb">AGB</Link>
           <Link href="/impressum">Impressum</Link>

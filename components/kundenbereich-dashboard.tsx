@@ -309,10 +309,8 @@ export function KundenbereichDashboard() {
         </div>
         <div className="kunden-card-side">
           <span className="kunden-meta">
-            {profile?.trial_end && new Date(profile.trial_end).getFullYear() > 2030
-              ? "Unlimitierter Testzugang"
-              : profile?.trial_end && new Date(profile.trial_end) > new Date()
-                ? "Trial aktiv"
+            {profile?.trial_end && new Date(profile.trial_end) > new Date()
+              ? "Trial aktiv"
               : "Plan aktiv"}
           </span>
           <strong>
@@ -485,7 +483,7 @@ export function KundenbereichDashboard() {
           <div className="cancel-confirm">
             <p>
               Bist du sicher? Dein Zugang läuft am {profile?.trial_end ? new Date(profile.trial_end).toLocaleDateString("de") : "Ende des Monats"} ab.
-              weiterhin alle Funktionen nutzen.
+              Du kannst bis dahin weiterhin alle Funktionen nutzen.
             </p>
             <div className="content-actions">
               <button

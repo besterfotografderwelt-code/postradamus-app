@@ -1961,6 +1961,13 @@ h3 { font-size: 1.15rem; }
 .post-result-card p { margin: 8px 0 0; font-size: 1rem; font-weight: 650; }
 .post-result-icon { font-size: 2.5rem; margin-bottom: 4px; }
 .post-result-sub { font-weight: 400 !important; font-size: .9rem !important; color: var(--muted) !important; }
+.post-result-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
 .post-success { background: #edfaef; border: 2px solid #86e0a0; }
 .post-success p { color: var(--good); }
 .post-error { background: #fff0ee; border: 2px solid #f5c6c2; }
@@ -2368,7 +2375,18 @@ h3 { font-size: 1.15rem; }
 }
 .pricing-card h2,
 .pricing-card h3 { margin: 0; font-size: 2rem; }
-.pricing-card p { margin: 10px 0 0; line-height: 1.45; }
+.pricing-card-head {
+  flex-shrink: 0;
+  min-height: 7.5em;
+}
+.pricing-card-head p { margin: 10px 0 0; line-height: 1.45; }
+.pricing-price {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 4.8em;
+  justify-content: flex-end;
+}
 .pricing-price strong {
   display: block;
   font-size: 2rem;
@@ -2379,11 +2397,15 @@ h3 { font-size: 1.15rem; }
   font-size: .9rem;
 }
 .pricing-quota {
+  flex-shrink: 0;
   padding: 13px 14px;
   border-radius: 16px;
   color: var(--accent);
   background: var(--accent-soft);
   font-weight: 760;
+  min-height: 3em;
+  display: flex;
+  align-items: center;
 }
 .pricing-list {
   display: grid;
@@ -2416,6 +2438,68 @@ h3 { font-size: 1.15rem; }
   background: #fff;
 }
 .pricing-button { width: 100%; }
+
+/* ── Vergleichstabelle ── */
+.compare-table-wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .95rem;
+  background: var(--panel);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.compare-table th,
+.compare-table td {
+  padding: 14px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+.compare-table thead th {
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding-top: 20px;
+  padding-bottom: 12px;
+  background: #fafafa;
+}
+.compare-table thead th:first-child {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: .88rem;
+}
+.compare-table tbody td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+.compare-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.compare-featured {
+  background: var(--accent-soft);
+  font-weight: 650;
+}
+.compare-table thead .compare-featured {
+  color: var(--accent);
+  position: relative;
+}
+.compare-table thead .compare-featured::after {
+  content: "Empfohlen";
+  display: block;
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-top: 2px;
+}
+
 .pricing-note-box {
   display: grid;
   gap: 12px;
@@ -2577,6 +2661,78 @@ h3 { font-size: 1.15rem; }
 .waitlist-message.is-error {
   color: var(--error);
 }
+/* ── Vergleichsseite ── */
+.alternative-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+.alternative-card {
+  background: var(--panel);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.alternative-card h3 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.alternative-claim {
+  color: var(--muted);
+  font-size: .92rem;
+  margin: 6px 0 16px;
+}
+.alternative-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.alternative-label {
+  display: block;
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+}
+.alternative-label.good { color: var(--good); }
+.alternative-label.bad { color: var(--error); }
+.alternative-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: .88rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.usecase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  max-width: 880px;
+  margin: 24px auto 0;
+}
+.usecase-card {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: left;
+  box-shadow: 0 4px 16px rgba(0,0,0,.04);
+  border: 1px solid rgba(0,0,0,.05);
+}
+.usecase-card strong {
+  display: block;
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+.usecase-card p {
+  margin: 0;
+  font-size: .9rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .landing-final .helper a {
   color: var(--accent);
   text-decoration: underline;
