@@ -61,6 +61,10 @@ export function KundenbereichDashboard() {
   const [authed, setAuthed] = useState<boolean | null>(false);
 
   useEffect(() => {
+    // Check for ?view=password-reset from login page
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "password-reset") {
+      setSubView("password-reset");
+    }
     fetch("/api/projects")
       .then((r) => {
         if (!r.ok) { setAuthed(false); setLoaded(true); return null; }
@@ -83,10 +87,20 @@ export function KundenbereichDashboard() {
     } catch { /* ignore */ }
   }, []);
 
-  function handlePasswordReset(e: React.FormEvent) {
+  async function handlePasswordReset(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: Supabase auth.resetPasswordForEmail(resetEmail)
-    setResetSent(true);
+    try {
+      await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      // Always show success to prevent email enumeration
+      setResetSent(true);
+    } catch {
+      // Silently show success even on error
+      setResetSent(true);
+    }
   }
 
   function connectInstagram() {
@@ -166,7 +180,7 @@ export function KundenbereichDashboard() {
     }
   }
 
-  function handlePasswordChange(e: React.FormEvent) {
+  async function handlePasswordChange(e: React.FormEvent) {
     e.preventDefault();
     setPwError("");
     if (pwNew.length < 8) {
@@ -177,8 +191,21 @@ export function KundenbereichDashboard() {
       setPwError("Die Passwörter stimmen nicht überein.");
       return;
     }
-    // TODO: Supabase auth.updateUser({ password: pwNew })
-    setSubView("password-saved");
+    try {
+      const res = await fetch("/api/auth/update-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pwNew }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setPwError(data.error || "Fehler beim Ändern des Passworts.");
+        return;
+      }
+      setSubView("password-saved");
+    } catch {
+      setPwError("Verbindungsfehler. Bitte versuch es später noch einmal.");
+    }
   }
 
   if (subView === "password-saved") {

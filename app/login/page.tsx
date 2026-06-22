@@ -52,6 +52,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <p className="helper">
           Neu hier? Gib deinen Namen ein und klick auf &bdquo;Konto erstellen&ldquo;.
         </p>
+        <p className="helper" style={{ marginTop: 8 }}>
+          <a href="/kundenbereich?view=password-reset" style={{ color: "var(--accent)" }}>
+            Passwort vergessen?
+          </a>
+        </p>
       </section>
     </div>
   );
