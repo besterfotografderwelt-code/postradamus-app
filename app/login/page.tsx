@@ -6,9 +6,6 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -93,8 +90,6 @@ export default function LoginPage() {
               name="fullName"
               autoComplete="name"
               placeholder="Tobias Köstl"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div className="field">
@@ -105,8 +100,6 @@ export default function LoginPage() {
               type="email"
               autoComplete="email"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div className="field">
@@ -118,8 +111,6 @@ export default function LoginPage() {
               minLength={8}
               autoComplete="current-password"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <div className="auth-actions">
