@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 
-export function TrialButton() {
+type TrialButtonProps = { plan?: string };
+
+export function TrialButton({ plan = "trial" }: TrialButtonProps) {
   const [loading, setLoading] = useState(false);
 
   async function start() {
@@ -13,8 +15,8 @@ export function TrialButton() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          plan: "trial",
-          returnUrl: `${origin}/kundenbereich?subscribed=true&trial=true`,
+          plan,
+          returnUrl: `${origin}/kundenbereich?subscribed=true`,
           cancelUrl: `${origin}/preise?cancelled=true`,
         }),
       });

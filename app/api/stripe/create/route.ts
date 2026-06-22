@@ -20,6 +20,7 @@ export async function POST(request: Request) {
 
   const { plan, returnUrl, cancelUrl } = await request.json();
   const planDef = PLAN_PRICES[plan] ?? PLAN_PRICES.starter;
+  const isTrial = plan === "trial";
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -37,9 +38,9 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      subscription_data: {
-        trial_period_days: 14,
-      },
+      ...(isTrial && {
+        subscription_data: { trial_period_days: 14 },
+      }),
       success_url: returnUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,

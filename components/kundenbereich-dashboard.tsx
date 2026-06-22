@@ -134,6 +134,38 @@ export function KundenbereichDashboard() {
     }
   }
 
+  async function handlePlanChange(plan: string) {
+    try {
+      const origin = window.location.origin;
+      const res = await fetch("/api/stripe/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan,
+          returnUrl: `${origin}/kundenbereich?subscribed=true`,
+          cancelUrl: `${origin}/kundenbereich`,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else if (res.status === 401) window.location.href = "/login";
+    } catch {
+      // silent
+    }
+  }
+
+  async function handleCancelSubscription() {
+    setCancelOpen(false);
+    try {
+      const res = await fetch("/api/stripe/cancel", { method: "POST" });
+      const data = await res.json();
+      if (data.portalUrl) window.location.href = data.portalUrl;
+      else setIgTestResult(data.message || "Fehler beim Aufruf des Kündigungs-Portals.");
+    } catch {
+      setIgTestResult("Verbindungsfehler.");
+    }
+  }
+
   function handlePasswordChange(e: React.FormEvent) {
     e.preventDefault();
     setPwError("");
@@ -339,7 +371,12 @@ export function KundenbereichDashboard() {
               {plan.current ? (
                 <span className="plan-badge-current">Aktuell</span>
               ) : (
-                <button className="button-secondary" type="button" style={{ marginTop: 8 }}>
+                <button
+                  className="button-secondary"
+                  type="button"
+                  style={{ marginTop: 8 }}
+                  onClick={() => handlePlanChange(plan.name.toLowerCase())}
+                >
                   {PLANS.findIndex((p) => p.current) < PLANS.findIndex((p) => p.name === plan.name)
                     ? "Upgraden"
                     : "Downgraden"}
@@ -490,6 +527,7 @@ export function KundenbereichDashboard() {
                 className="button"
                 type="button"
                 style={{ background: "var(--error, #d32f2f)", borderColor: "var(--error, #d32f2f)" }}
+                onClick={handleCancelSubscription}
               >
                 Ja, endgültig kündigen
               </button>

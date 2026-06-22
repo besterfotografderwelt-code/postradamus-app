@@ -98,7 +98,7 @@ export default function PreisePage() {
                   <li key={item}>{item}</li>
                 ))}
               </ul>
-              <TrialButton />
+              <TrialButton plan={plan.name.toLowerCase()} />
             </article>
           ))}
         </div>
