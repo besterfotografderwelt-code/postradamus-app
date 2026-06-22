@@ -1,75 +1,17 @@
-"use client";
+import type { Metadata } from "next";
+import Link from "next/link";
 
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+export const metadata: Metadata = {
+  title: "Anmelden – Postradamus",
+};
 
-export default function LoginPage() {
-  const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+type LoginPageProps = {
+  searchParams: Promise<{ error?: string; message?: string; next?: string }>;
+};
 
-  function readForm(): { email: string; password: string; fullName: string } {
-    if (!formRef.current) return { email: "", password: "", fullName: "" };
-    const fd = new FormData(formRef.current);
-    return {
-      email: String(fd.get("email") ?? "").trim(),
-      password: String(fd.get("password") ?? ""),
-      fullName: String(fd.get("fullName") ?? "").trim(),
-    };
-  }
-
-  async function handleSignIn(ev: React.FormEvent) {
-    ev.preventDefault();
-    setError("");
-    setLoading(true);
-    const { email: mail, password: pw } = readForm();
-    try {
-      const res = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: mail, password: pw }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Anmeldung fehlgeschlagen.");
-        return;
-      }
-      if (data.redirect) router.push(data.redirect);
-      else router.push("/projects");
-      router.refresh();
-    } catch {
-      setError("Verbindungsfehler.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleSignUp(ev: React.FormEvent) {
-    ev.preventDefault();
-    setError("");
-    setMessage("");
-    setLoading(true);
-    const { email: mail, password: pw, fullName: n } = readForm();
-    try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: mail, password: pw, fullName: n }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Registrierung fehlgeschlagen.");
-        return;
-      }
-      setMessage(data.message || "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
-    } catch {
-      setError("Verbindungsfehler.");
-    } finally {
-      setLoading(false);
-    }
-  }
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const { error, message, next } = await searchParams;
+  const redirect = next ? `?next=${encodeURIComponent(next)}` : "";
 
   return (
     <div className="auth-wrap">
@@ -82,25 +24,14 @@ export default function LoginPage() {
         {error && <div className="form-message form-message-error">{error}</div>}
         {message && <div className="form-message form-message-success">{message}</div>}
 
-        <form className="form" ref={formRef} onSubmit={handleSignIn}>
+        <form className="form" method="POST" action={`/api/auth/signin${redirect ? `?next=${encodeURIComponent(next!)}` : ""}`}>
           <div className="field">
             <label htmlFor="fullName">Name oder Studio</label>
-            <input
-              id="fullName"
-              name="fullName"
-              autoComplete="name"
-              placeholder="Tobias Köstl"
-            />
+            <input id="fullName" name="fullName" autoComplete="name" placeholder="Tobias Köstl" />
           </div>
           <div className="field">
             <label htmlFor="email">E-Mail</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-            />
+            <input id="email" name="email" type="email" autoComplete="email" required />
           </div>
           <div className="field">
             <label htmlFor="password">Passwort</label>
@@ -114,14 +45,14 @@ export default function LoginPage() {
             />
           </div>
           <div className="auth-actions">
-            <button className="button" type="submit" disabled={loading}>
-              {loading ? "Wird angemeldet …" : "Anmelden"}
+            <button className="button" type="submit">
+              Anmelden
             </button>
             <button
               className="button-secondary"
-              type="button"
-              disabled={loading}
-              onClick={handleSignUp}
+              type="submit"
+              formMethod="POST"
+              formAction="/api/auth/signup"
             >
               Konto erstellen
             </button>
@@ -131,9 +62,9 @@ export default function LoginPage() {
           Neu hier? Gib deinen Namen ein und klick auf &bdquo;Konto erstellen&ldquo;.
         </p>
         <p className="helper" style={{ marginTop: 8 }}>
-          <a href="/kundenbereich?view=password-reset" style={{ color: "var(--accent)" }}>
+          <Link href="/kundenbereich?view=password-reset" style={{ color: "var(--accent)" }}>
             Passwort vergessen?
-          </a>
+          </Link>
         </p>
       </section>
     </div>

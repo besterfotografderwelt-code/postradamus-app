@@ -4,15 +4,18 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: "Supabase ist nicht konfiguriert." }, { status: 500 });
+    return NextResponse.redirect(
+      new URL("/login?error=Supabase+ist+nicht+konfiguriert.", request.url)
+    );
   }
 
-  const { email, password } = await request.json();
+  const fd = await request.formData();
+  const email = String(fd.get("email") ?? "").trim();
+  const password = String(fd.get("password") ?? "");
 
-  if (!email || !password || password.length < 8) {
-    return NextResponse.json(
-      { error: "Bitte E-Mail und Passwort mit mindestens 8 Zeichen eingeben." },
-      { status: 400 }
+  if (!email || password.length < 8) {
+    return NextResponse.redirect(
+      new URL("/login?error=Bitte+E-Mail+und+Passwort+mit+mindestens+8+Zeichen+eingeben.", request.url)
     );
   }
 
@@ -20,10 +23,11 @@ export async function POST(request: Request) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 401 });
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url)
+    );
   }
 
-  // Determine redirect target
   const { data: profile } = await supabase
     .from("profiles")
     .select("plan, trial_end")
@@ -36,7 +40,7 @@ export async function POST(request: Request) {
       new Date(profile.trial_end) > new Date()) ||
       ["starter", "growth", "studio"].includes(profile.plan ?? ""));
 
-  return NextResponse.json({
-    redirect: hasActivePlan ? "/projects" : "/preise",
-  });
+  const target = hasActivePlan ? "/projects" : "/preise";
+  const redirectUrl = new URL(target, request.url);
+  return NextResponse.redirect(redirectUrl, 303);
 }

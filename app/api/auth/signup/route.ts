@@ -5,23 +5,27 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: "Supabase ist nicht konfiguriert." }, { status: 500 });
+    const redirectUrl = new URL("/login", request.url);
+    redirectUrl.searchParams.set("error", "Supabase ist nicht konfiguriert.");
+    return NextResponse.redirect(redirectUrl);
   }
 
-  const { email, password, fullName } = await request.json();
+  const fd = await request.formData();
+  const email = String(fd.get("email") ?? "").trim();
+  const password = String(fd.get("password") ?? "");
+  const fullName = String(fd.get("fullName") ?? "").trim();
 
   if (!email || !password || password.length < 8 || !fullName) {
-    return NextResponse.json(
-      { error: "Name, E-Mail und Passwort mit mindestens 8 Zeichen sind erforderlich." },
-      { status: 400 }
-    );
+    const redirectUrl = new URL("/login", request.url);
+    redirectUrl.searchParams.set("error", "Name, E-Mail und Passwort mit mindestens 8 Zeichen sind erforderlich.");
+    return NextResponse.redirect(redirectUrl);
   }
 
   const headerStore = await headers();
   const origin = headerStore.get("origin") ?? "https://postradamus.ai";
   const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -31,15 +35,12 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    const redirectUrl = new URL("/login", request.url);
+    redirectUrl.searchParams.set("error", error.message);
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // If user is already confirmed (auto-signup), we can log them in immediately
-  if (data?.user?.identities?.length === 0) {
-    return NextResponse.json({ error: "Ein Konto mit dieser E-Mail existiert bereits." }, { status: 409 });
-  }
-
-  return NextResponse.json({
-    message: "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.",
-  });
+  const redirectUrl = new URL("/login", request.url);
+  redirectUrl.searchParams.set("message", "Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.");
+  return NextResponse.redirect(redirectUrl);
 }
