@@ -29,6 +29,17 @@ export type ProjectImage = {
   createdAt: string;
 };
 
+export type ProjectVideo = {
+  id: string;
+  projectId: string;
+  name: string;
+  videoUrl: string;       // Blob-URL für Vorschau/Upload
+  thumbnailUrl: string;    // Standbild-Vorschau
+  duration: number;        // Sekunden
+  size: number;            // Bytes
+  createdAt: string;
+};
+
 export const projectOutputTypes = [
   "blog",
   "instagram_caption",

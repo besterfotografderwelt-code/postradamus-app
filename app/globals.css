@@ -1810,6 +1810,62 @@ h3 { font-size: 1.15rem; }
 .carousel-left { left: 8px; }
 .carousel-right { right: 8px; }
 .carousel-arrow:hover { background: #fff; }
+
+/* Video overlays in feed preview */
+.video-play-overlay-large {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+  color: rgba(255,255,255,.9);
+  background: rgba(0,0,0,.15);
+  z-index: 1;
+  pointer-events: none;
+}
+.video-duration-badge-large {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0,0,0,.7);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Video card in project image grid */
+.video-card {
+  position: relative;
+}
+.video-duration-badge {
+  position: absolute;
+  bottom: 48px;
+  right: 8px;
+  background: rgba(0,0,0,.75);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 2;
+  pointer-events: none;
+}
+.video-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.2rem;
+  color: rgba(255,255,255,.85);
+  z-index: 1;
+  pointer-events: none;
+  text-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+
 .carousel-dots {
   position: absolute;
   top: 10px;
@@ -2731,4 +2787,69 @@ h3 { font-size: 1.15rem; }
 }
 .status-badge.is-warning {
   color: #b8860b;
+}
+
+/* Early-Bird Banner */
+.early-bird-banner {
+  background: linear-gradient(135deg, #fef9e7 0%, #fdebd0 100%);
+  border: 2px solid #f39c12;
+  border-radius: 14px;
+  padding: 0;
+  margin: 24px auto 0;
+  max-width: 720px;
+  animation: earlyBirdPulse 2s ease-in-out infinite;
+}
+@keyframes earlyBirdPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.25); }
+  50% { box-shadow: 0 0 0 8px rgba(243, 156, 18, 0); }
+}
+.early-bird-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+}
+.early-bird-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+.early-bird-banner-inner strong {
+  display: block;
+  font-size: 1.05rem;
+  color: #b45309;
+}
+.early-bird-banner-inner p {
+  margin: 4px 0 0;
+  color: #92400e;
+  font-size: .92rem;
+  line-height: 1.45;
+}
+.early-bird-banner-inner em {
+  font-style: normal;
+  font-weight: 700;
+  color: #d97706;
+}
+.early-bird-count {
+  display: inline-block;
+  background: #f39c12;
+  color: #fff;
+  font-weight: 700;
+  font-size: .88rem;
+  padding: 1px 8px;
+  border-radius: 10px;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Early-Bird Pricing */
+.early-bird-price {
+  color: #d97706 !important;
+  font-size: 2.6rem !important;
+}
+.early-bird-original {
+  display: block;
+  color: var(--muted);
+  text-decoration: line-through;
+  font-size: .88rem;
+  margin-bottom: 2px;
 }

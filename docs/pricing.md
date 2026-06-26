@@ -6,7 +6,7 @@ Stand: 2026-06-16
 
 | Paket | Preis | Limit | Zielgruppe |
 | --- | ---: | ---: | --- |
-| Starter | 29,90 EUR / Monat | 50 Bilder / Monat | kleine Accounts, unregelmäßige Poster |
+| Starter | 24,90 EUR / Monat | 75 Bilder / Monat | kleine Accounts, unregelmäßige Poster |
 | Growth | 49,90 EUR / Monat | 150 Bilder / Monat | aktive Selbstständige, Fotografen, Studios |
 | Studio | 129,90 EUR / Monat | unlimitiert mit Fair-Use | Teams, Agenturen, große Accounts |
 
@@ -30,7 +30,7 @@ Echtes Unlimited ist bei KI-Produkten riskant, weil einzelne Power-User oder aut
 
 ## Einschätzung
 
-29,90 EUR / 49,90 EUR / 129,90 EUR ist als erste Preisarchitektur plausibel:
+24,90 EUR / 49,90 EUR / 129,90 EUR ist als erste Preisarchitektur plausibel:
 
 - Starter hat genug Marge, ist aber niedrig genug für kleine Betriebe.
 - Growth ist der eigentliche Zielplan und sollte prominent empfohlen werden.

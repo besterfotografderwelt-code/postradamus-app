@@ -195,7 +195,7 @@ export function LandingPage() {
         <div className="landing-section-head">
           <div className="eyebrow">Preise</div>
           <h2>14 Tage kostenlos testen.</h2>
-          <p className="pricing-subline">Danach ab 29,90 € pro Monat. Starter, Growth oder Studio – alle Pakete monatlich kündbar.</p>
+          <p className="pricing-subline">Danach ab 24,90 € pro Monat. Starter, Growth oder Studio – alle Pakete monatlich kündbar.</p>
           <Link className="button landing-primary" href="/preise" style={{ marginTop: 16, display: "inline-flex" }}>
             Alle Preise ansehen
           </Link>

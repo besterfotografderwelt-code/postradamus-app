@@ -11,7 +11,15 @@ import {
   usesSupabaseRepository
 } from "@/lib/repositories/get-project-repository";
 import { getProjectMeta, getProjectTitle } from "@/lib/project-display";
-import { projectImageTags, type ProjectImage, type WeddingProject } from "@/lib/types";
+import { projectImageTags, type ProjectImage, type ProjectVideo, type WeddingProject } from "@/lib/types";
+import {
+  addProjectVideos,
+  deleteProjectVideo,
+  loadProjectVideos,
+  releaseProjectVideoUrls,
+  MAX_VIDEO_FILES,
+  MAX_VIDEO_SIZE_BYTES
+} from "@/lib/project-videos";
 import { type OnboardingConfig } from "@/components/project-create-form";
 
 type ProjectDetailProps = {
@@ -21,12 +29,21 @@ type ProjectDetailProps = {
 const MAX_FILES_PER_UPLOAD = 300;
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return "";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 export function ProjectDetail({ projectId }: ProjectDetailProps) {
   const [project, setProject] = useState<WeddingProject | null>(null);
   const [images, setImages] = useState<ProjectImage[]>([]);
+  const [videos, setVideos] = useState<ProjectVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingVideo, setIsSavingVideo] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [captureDates, setCaptureDates] = useState<Record<string, string | null>>({});
@@ -47,6 +64,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
     return projectImageTags;
   }, [projectId]);
   const imagesRef = useRef<ProjectImage[]>([]);
+  const videosRef = useRef<ProjectVideo[]>([]);
   const usesSupabase = usesSupabaseRepository();
 
   function replaceImages(nextImages: ProjectImage[]) {
@@ -67,12 +85,16 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
         const nextProject = await getProjectRepository().get(projectId);
         const imageRepo = getImageRepository();
         const nextImages = nextProject ? await imageRepo.loadImages(projectId) : [];
+        const nextVideos = nextProject ? await loadProjectVideos(projectId) : [];
         if (cancelled) {
           imageRepo.releaseUrls(nextImages);
+          releaseProjectVideoUrls(nextVideos);
           return;
         }
         setProject(nextProject);
         replaceImages(nextImages);
+        videosRef.current = nextVideos;
+        setVideos(nextVideos);
         setImagesLoaded(true);
       } catch {
         if (!cancelled) {
@@ -121,12 +143,48 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
   useEffect(
     () => () => {
       getImageRepository().releaseUrls(imagesRef.current);
+      releaseProjectVideoUrls(videosRef.current);
       imagesRef.current = [];
+      videosRef.current = [];
     },
     []
   );
 
   const favoriteCount = useMemo(() => images.filter((image) => image.isFavorite).length, [images]);
+
+  async function handleVideoUpload(files: FileList | null) {
+    if (!files || files.length === 0 || !project) return;
+
+    setErrorMessage("");
+    const selectedFiles = Array.from(files);
+    if (selectedFiles.length > MAX_VIDEO_FILES) {
+      setErrorMessage(`Bitte höchstens ${MAX_VIDEO_FILES} Videos auf einmal auswählen.`);
+      return;
+    }
+
+    const accepted = selectedFiles.filter(
+      (file) =>
+        (file.type === "video/mp4" || file.type === "video/quicktime" ||
+         /\.(mp4|mov)$/i.test(file.name)) &&
+        file.size <= MAX_VIDEO_SIZE_BYTES
+    );
+    if (accepted.length !== selectedFiles.length) {
+      setErrorMessage(`Einige Dateien wurden ausgelassen. Erlaubt sind MP4 & MOV bis ${MAX_VIDEO_SIZE_BYTES / 1024 / 1024} MB.`);
+    }
+    if (accepted.length === 0) return;
+
+    setIsSavingVideo(true);
+    try {
+      const added = await addProjectVideos(project.id, accepted);
+      const nextVideos = [...videosRef.current, ...added];
+      videosRef.current = nextVideos;
+      setVideos(nextVideos);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Videos konnten nicht gespeichert werden.");
+    } finally {
+      setIsSavingVideo(false);
+    }
+  }
 
   async function handleUpload(files: FileList | null) {
     if (!files || files.length === 0 || !project) return;
@@ -259,7 +317,80 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
           </label>
           {errorMessage ? <p className="form-message form-message-error" role="alert">{errorMessage}</p> : null}
 
-        {images.length > 0 && (
+        {/* Video Upload */}
+          <div className="video-upload-area" style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--border-light)" }}>
+            <label className="upload-card" style={{ borderStyle: "dashed" }}>
+              <input
+                accept="video/mp4,video/quicktime"
+                disabled={isSavingVideo}
+                multiple
+                onChange={(event) => {
+                  const files = event.target.files;
+                  if (!files) return;
+                  void handleVideoUpload(files).finally(() => {
+                    const el = event.target as HTMLInputElement | null;
+                    if (el) el.value = "";
+                  });
+                }}
+                type="file"
+              />
+              <strong>{isSavingVideo ? "Video wird geladen ..." : "🎬 Video hochladen (optional)"}</strong>
+              <span>MP4 / MOV · maximal {MAX_VIDEO_FILES} Dateien · bis {MAX_VIDEO_SIZE_BYTES / 1024 / 1024} MB</span>
+            </label>
+          </div>
+
+          {videos.length > 0 && (
+            <div className="video-grid-section" style={{ marginTop: 8 }}>
+              <div className="image-grid-header">
+                <span>{videos.length} Video{videos.length !== 1 ? "s" : ""}</span>
+              </div>
+              <div className="image-grid">
+                {videos.map((video) => (
+                  <article className="image-card video-card" key={video.id}>
+                    <Image
+                      alt={video.name}
+                      height={900}
+                      src={video.thumbnailUrl}
+                      unoptimized
+                      width={1600}
+                    />
+                    <div className="video-duration-badge">
+                      {formatDuration(video.duration)}
+                    </div>
+                    <div className="video-play-overlay">▶</div>
+                    <button
+                      className="image-delete"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await deleteProjectVideo(project.id, video.id);
+                          setVideos((current) => {
+                            const next = current.filter((v) => v.id !== video.id);
+                            videosRef.current = next;
+                            return next;
+                          });
+                          releaseProjectVideoUrls([video]);
+                        } catch {
+                          setErrorMessage("Das Video konnte nicht gelöscht werden.");
+                        }
+                      }}
+                      title="Video löschen"
+                      type="button"
+                    >
+                      ✕
+                    </button>
+                    <div className="image-card-body">
+                      <span className="meta" style={{ fontSize: ".82rem", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {video.name}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {images.length > 0 && (
           <>
             <div className="image-grid-header">
               <span>{images.length} Bilder</span>
@@ -386,6 +517,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 
       <ContentStudio
         images={images}
+        videos={videos}
         onComplete={async () => {
           const updated = await getProjectRepository().update(project.id, { stage: "export" });
           setProject(updated);

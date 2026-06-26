@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ProjectImage } from "@/lib/types";
+import type { ProjectImage, ProjectVideo } from "@/lib/types";
 
 export type PlannedPost = {
   id: string;
   scheduledAt: string;
   type: "single" | "carousel" | "reel" | "story";
   images: ProjectImage[];
+  videoId?: string;
+  videoName?: string;
   caption: string;
   hashtags: string;
   mentions: string[];
@@ -17,6 +19,7 @@ export type PlannedPost = {
 
 type PostingPlanProps = {
   images: ProjectImage[];
+  videos: ProjectVideo[];
   tone?: string;
   businessType?: string;
   onPlanChange?: (posts: PlannedPost[]) => void;
@@ -46,6 +49,13 @@ const MAX_ANALYSIS_IMAGES = 1;
 function getFormat(type: PostSlot["type"]): string {
   if (type === "reel" || type === "story") return "9/16";
   return "4/5";
+}
+
+function formatVideoDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return "";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 function formatDate(baseDate: Date, offset: number): string {
@@ -252,7 +262,7 @@ const genericHashtagSets = [
   "#kmu #businessowner #unternehmertum #vision #zukunft #erfolg #team #echtheit #leistung #wert",
 ];
 
-function generatePostSlots(images: ProjectImage[], tone: string, businessType = "sonstiges"): PostSlot[] {
+function generatePostSlots(images: ProjectImage[], videos: ProjectVideo[], tone: string, businessType = "sonstiges"): PostSlot[] {
   const normalizedBusinessType = businessType.trim().toLowerCase();
   const isWeddingBusiness = normalizedBusinessType === "hochzeitsfotograf";
   const all = [...images].sort((a, b) => imagePriorityScore(b) - imagePriorityScore(a));
@@ -301,21 +311,39 @@ function generatePostSlots(images: ProjectImage[], tone: string, businessType = 
       : genericStoryCaptions;
   function nextStoryCaption() { return activeStoryCaptions[idx++ % activeStoryCaptions.length]; }
 
-  // 1. Reel opening (if enough tagged images)
-  const focusTags = isWeddingBusiness
-    ? ["Trauung", "Party", "Getting Ready"]
-    : normalizedBusinessType === "fitness"
-      ? ["Workout", "Transformation", "Studio", "Motivation"]
-      : normalizedBusinessType === "restaurant"
-        ? ["Gerichte", "Interior", "Team", "Zubereitung"]
-        : normalizedBusinessType === "produktfotograf"
-          ? ["Weißer Hintergrund", "Lifestyle", "Detail", "Verpackung", "Flatlay", "Werbung"]
-          : ["Studio", "Outdoor", "Business", "Familie", "Kinder", "Bewerbung", "Arbeit", "Projekt", "Detail", "Details"];
-  const reelImgs = all.filter((img) => img.tags.some((t) => focusTags.includes(t)));
-  if (reelImgs.length >= 3) {
-    const imgs = reelImgs.filter((img) => !usedImages.has(img.id)).slice(0, 4);
-    mark(imgs);
-    slots.push({ id: "reel", dayOffset: 1, time: "19:30", type: "reel", images: imgs, description: "Reel: Stimmung & erste Eindrücke", caption: nextCaption(), hashtags: baseHashtags[idx % baseHashtags.length] });
+  // 1. Reel opening – prefer real videos, fall back to tagged images
+  if (videos.length >= 1) {
+    // Create up to 2 reel slots from available videos
+    const reelVideos = videos.slice(0, Math.min(2, videos.length));
+    const placeholderImgs = pick(Math.min(4, all.length));
+    reelVideos.forEach((video, vi) => {
+      slots.push({
+        id: `reel-video-${vi}`,
+        dayOffset: 1 + vi * 2,
+        time: "19:30",
+        type: "reel",
+        images: placeholderImgs.length > 0 ? [placeholderImgs[vi % placeholderImgs.length]] : [],
+        description: `Reel: ${video.name.replace(/\.(mp4|mov)$/i, "")}`,
+        caption: nextCaption(),
+        hashtags: baseHashtags[idx % baseHashtags.length]
+      });
+    });
+  } else {
+    const focusTags = isWeddingBusiness
+      ? ["Trauung", "Party", "Getting Ready"]
+      : normalizedBusinessType === "fitness"
+        ? ["Workout", "Transformation", "Studio", "Motivation"]
+        : normalizedBusinessType === "restaurant"
+          ? ["Gerichte", "Interior", "Team", "Zubereitung"]
+          : normalizedBusinessType === "produktfotograf"
+            ? ["Weißer Hintergrund", "Lifestyle", "Detail", "Verpackung", "Flatlay", "Werbung"]
+            : ["Studio", "Outdoor", "Business", "Familie", "Kinder", "Bewerbung", "Arbeit", "Projekt", "Detail", "Details"];
+    const reelImgs = all.filter((img) => img.tags.some((t) => focusTags.includes(t)));
+    if (reelImgs.length >= 3) {
+      const imgs = reelImgs.filter((img) => !usedImages.has(img.id)).slice(0, 4);
+      mark(imgs);
+      slots.push({ id: "reel", dayOffset: 1, time: "19:30", type: "reel", images: imgs, description: "Reel: Stimmung & erste Eindrücke", caption: nextCaption(), hashtags: baseHashtags[idx % baseHashtags.length] });
+    }
   }
 
   // 2. Story teaser
@@ -552,7 +580,7 @@ function composePreviewCaption(caption: string, mentions: string[]): string {
   return [cleanedCaption, mentions.join(" ")].filter(Boolean).join("\n\n");
 }
 
-export function PostingPlan({ images, tone = "", businessType = "sonstiges", onPlanChange }: PostingPlanProps) {
+export function PostingPlan({ images, videos, tone = "", businessType = "sonstiges", onPlanChange }: PostingPlanProps) {
   const [cadence, setCadence] = useState<Cadence>({ interval: "weekly", count: 3 });
   const [calendarWeek, setCalendarWeek] = useState(0);
   const [expandedSlot, setExpandedSlot] = useState<string | null>(null);
@@ -593,7 +621,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
     return "";
   }, []);
 
-  const slots = useMemo(() => generatePostSlots(images, tone, businessType), [images, tone, businessType]);
+  const slots = useMemo(() => generatePostSlots(images, videos, tone, businessType), [images, videos, tone, businessType]);
 
   const filteredSlots = useMemo(() => {
     if (slots.length === 0) return [];
@@ -664,11 +692,24 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
       const hashtags = editedHashtags[slot.id] ?? analyzed?.hashtags ?? slot.hashtags;
       const mentions = normalizeMentions(mentionInputs[slot.id] ?? "");
 
+      // Find associated video for reel slots
+      let videoId: string | undefined;
+      let videoName: string | undefined;
+      if (slot.type === "reel" && slot.id.startsWith("reel-video-")) {
+        const videoIndex = parseInt(slot.id.replace("reel-video-", ""), 10);
+        if (!isNaN(videoIndex) && videos[videoIndex]) {
+          videoId = videos[videoIndex].id;
+          videoName = videos[videoIndex].name;
+        }
+      }
+
       return {
         id: slot.id,
         scheduledAt: buildScheduledAt(baseDate, slot.dayOffset, slot.time),
         type: slot.type,
         images: effectiveImages,
+        videoId,
+        videoName,
         caption,
         hashtags,
         mentions,
@@ -685,6 +726,7 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
     mentionInputs,
     slotTones,
     tone,
+    videos,
     visibleSlots
   ]);
 
@@ -1016,31 +1058,48 @@ export function PostingPlan({ images, tone = "", businessType = "sonstiges", onP
               </div>
 
               <div className="feed-preview" style={{ aspectRatio: formatRatio }}>
-                {currentImg ? (
-                  <>
-                    <Image alt="Vorschau" fill src={currentImg.thumbnailUrl} style={{ objectFit: "cover", objectPosition: objectPos }} unoptimized />
-                    {slot.type === "carousel" && effectiveImages.length > 1 ? (
+                {/* Show video thumbnail for reel slots with videos */}
+                {slot.type === "reel" && slot.id.startsWith("reel-video-") ? (() => {
+                  const videoIndex = parseInt(slot.id.replace("reel-video-", ""), 10);
+                  const video = !isNaN(videoIndex) ? videos[videoIndex] : null;
+                  if (video) {
+                    return (
                       <>
-                        <div className="carousel-dots">
-                          {effectiveImages.map((_, i) => (
-                            <span className={i === cIdx ? "dot-active" : ""} key={i} />
-                          ))}
-                        </div>
-                        <button
-                          className="carousel-arrow carousel-left"
-                          onClick={(e) => { e.stopPropagation(); setCarouselIndex({ ...carouselIndex, [slot.id]: Math.max(0, cIdx - 1) }); }}
-                          type="button"
-                        >‹</button>
-                        <button
-                          className="carousel-arrow carousel-right"
-                          onClick={(e) => { e.stopPropagation(); setCarouselIndex({ ...carouselIndex, [slot.id]: Math.min(effectiveImages.length - 1, cIdx + 1) }); }}
-                          type="button"
-                        >›</button>
+                        <Image alt={video.name} fill src={video.thumbnailUrl} style={{ objectFit: "cover" }} unoptimized />
+                        <div className="video-play-overlay-large">▶</div>
+                        <div className="video-duration-badge-large">{formatVideoDuration(video.duration)}</div>
                       </>
-                    ) : null}
-                  </>
-                ) : (
-                  <div className="ig-preview-placeholder"><span>Bild auswählen</span></div>
+                    );
+                  }
+                  return null;
+                })() : null}
+                {!(slot.type === "reel" && slot.id.startsWith("reel-video-") && videos[parseInt(slot.id.replace("reel-video-", ""), 10)]) && (
+                  currentImg ? (
+                    <>
+                      <Image alt="Vorschau" fill src={currentImg.thumbnailUrl} style={{ objectFit: "cover", objectPosition: objectPos }} unoptimized />
+                      {slot.type === "carousel" && effectiveImages.length > 1 ? (
+                        <>
+                          <div className="carousel-dots">
+                            {effectiveImages.map((_, i) => (
+                              <span className={i === cIdx ? "dot-active" : ""} key={i} />
+                            ))}
+                          </div>
+                          <button
+                            className="carousel-arrow carousel-left"
+                            onClick={(e) => { e.stopPropagation(); setCarouselIndex({ ...carouselIndex, [slot.id]: Math.max(0, cIdx - 1) }); }}
+                            type="button"
+                          >‹</button>
+                          <button
+                            className="carousel-arrow carousel-right"
+                            onClick={(e) => { e.stopPropagation(); setCarouselIndex({ ...carouselIndex, [slot.id]: Math.min(effectiveImages.length - 1, cIdx + 1) }); }}
+                            type="button"
+                          >›</button>
+                        </>
+                      ) : null}
+                    </>
+                  ) : (
+                    <div className="ig-preview-placeholder"><span>Bild auswählen</span></div>
+                  )
                 )}
               </div>
 

@@ -20,12 +20,12 @@ const DEMO_USER = {
 const DEMO_INVOICES = [
   { id: "INV-2026-06", date: "01.06.2026", amount: "49,90 €", status: "Bezahlt" },
   { id: "INV-2026-05", date: "01.05.2026", amount: "49,90 €", status: "Bezahlt" },
-  { id: "INV-2026-04", date: "01.04.2026", amount: "29,90 €", status: "Bezahlt" },
-  { id: "INV-2026-03", date: "01.03.2026", amount: "29,90 €", status: "Bezahlt" },
+  { id: "INV-2026-04", date: "01.04.2026", amount: "24,90 €", status: "Bezahlt" },
+  { id: "INV-2026-03", date: "01.03.2026", amount: "24,90 €", status: "Bezahlt" },
 ];
 
 const PLANS = [
-  { name: "Starter", price: "29,90 €", quota: "50 Bilder/Monat" },
+  { name: "Starter", price: "24,90 €", quota: "75 Bilder/Monat" },
   { name: "Growth", price: "49,90 €", quota: "150 Bilder/Monat", current: true },
   { name: "Studio", price: "129,90 €", quota: "Unlimited (Fair-Use)" },
 ];

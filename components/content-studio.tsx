@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getOutputRepository } from "@/lib/repositories/get-output-repository";
 import { PostingPlan, type PlannedPost } from "@/components/posting-plan";
-import { type ProjectImage, type ProjectOutput, type WeddingProject } from "@/lib/types";
+import { type ProjectImage, type ProjectOutput, type ProjectVideo, type WeddingProject } from "@/lib/types";
+import { getVideoBlob } from "@/lib/project-videos";
 
-type ContentStudioProps = { project: WeddingProject; images: ProjectImage[]; onFirstOutput: () => void; onComplete: () => Promise<void> };
+type ContentStudioProps = { project: WeddingProject; images: ProjectImage[]; videos: ProjectVideo[]; onFirstOutput: () => void; onComplete: () => Promise<void> };
 
 const tones = [
   { value: "", label: "Authentisch" },
@@ -20,7 +21,7 @@ const tones = [
   { value: "lässig", label: "Lässig" },
 ];
 
-export function ContentStudio({ project, images, onFirstOutput }: ContentStudioProps) {
+export function ContentStudio({ project, images, videos, onFirstOutput }: ContentStudioProps) {
   const [output, setOutput] = useState<ProjectOutput | null>(null);
   const [draft, setDraft] = useState("");
   const [tone, setTone] = useState("");
@@ -108,19 +109,27 @@ export function ContentStudio({ project, images, onFirstOutput }: ContentStudioP
     const caption = captionParts.filter(Boolean).join("\n\n");
     if (!caption && post.type !== "story") throw new Error("Für einen geplanten Post fehlt die Caption.");
 
-    const postableImages = post.images.filter((img) => img.thumbnailUrl);
-    if (postableImages.length === 0) throw new Error("Für einen geplanten Post fehlt ein Bild.");
-
     const form = new FormData();
-    await Promise.all(postableImages.map(async (img, index) => {
-      const sourceUrl = img.originalUrl || img.thumbnailUrl;
-      const blob = await fetch(sourceUrl).then((response) => {
-        if (!response.ok) throw new Error(`Bild konnte nicht geladen werden: ${img.name}`);
-        return response.blob();
-      });
-      const fieldName = postableImages.length > 1 ? "images" : "image";
-      form.append(fieldName, blob, img.name || `photo-${index + 1}.jpg`);
-    }));
+
+    // Handle reel posts with video
+    if (post.type === "reel" && post.videoId) {
+      const videoBlob = await getVideoBlob(post.videoId);
+      if (!videoBlob) throw new Error("Video konnte nicht geladen werden.");
+      form.append("video", videoBlob, post.videoName || "reel.mp4");
+    } else {
+      const postableImages = post.images.filter((img) => img.thumbnailUrl);
+      if (postableImages.length === 0) throw new Error("Für einen geplanten Post fehlt ein Bild.");
+
+      await Promise.all(postableImages.map(async (img, index) => {
+        const sourceUrl = img.originalUrl || img.thumbnailUrl;
+        const blob = await fetch(sourceUrl).then((response) => {
+          if (!response.ok) throw new Error(`Bild konnte nicht geladen werden: ${img.name}`);
+          return response.blob();
+        });
+        const fieldName = postableImages.length > 1 ? "images" : "image";
+        form.append(fieldName, blob, img.name || `photo-${index + 1}.jpg`);
+      }));
+    }
 
     form.append("caption", caption);
     form.append("postType", post.type === "story" ? "story" : post.type === "reel" ? "reel" : post.type === "carousel" ? "carousel" : "feed");
@@ -140,10 +149,14 @@ export function ContentStudio({ project, images, onFirstOutput }: ContentStudioP
       let config = { accessToken: "", accountId: "" };
       try { const raw = localStorage.getItem("weddingflow.instagram.v1"); if (raw) config = JSON.parse(raw); } catch {}
 
-      const publishablePosts = plannedPosts.filter((post) => post.type === "single" || post.type === "carousel" || post.type === "story");
+      // Reels are publishable if they have a videoId or images
+      const publishablePosts = plannedPosts.filter((post) => {
+        if (post.type === "reel") return Boolean(post.videoId);
+        return post.type === "single" || post.type === "carousel" || post.type === "story";
+      });
       const unsupportedCount = plannedPosts.length - publishablePosts.length;
       if (publishablePosts.length === 0) {
-        setPostResult("❌ Im Posting-Plan ist kein automatisch postbarer Feed-, Carousel- oder Story-Post.");
+        setPostResult("❌ Im Posting-Plan ist kein automatisch postbarer Post. Für Reels lade zuerst ein Video hoch.");
         return;
       }
 
@@ -177,8 +190,8 @@ export function ContentStudio({ project, images, onFirstOutput }: ContentStudioP
       }));
 
       const postedInfo = postedIds.size > 0 ? `${postedIds.size} fällige Posts veröffentlicht. ` : "";
-      const scheduledInfo = futurePosts.length > 0 ? `${futurePosts.length} weitere Feed/Carousel/Story-Posts sind nach Plan getaktet.` : "Keine weiteren Feed/Carousel/Story-Posts offen.";
-      const unsupportedInfo = unsupportedCount > 0 ? ` ${unsupportedCount} Reel-Slots bleiben vorbereitet, weil dafür noch eine echte MP4-Video-Erzeugung nötig ist.` : "";
+      const scheduledInfo = futurePosts.length > 0 ? `${futurePosts.length} weitere Posts sind nach Plan getaktet.` : "Keine weiteren Posts offen.";
+      const unsupportedInfo = unsupportedCount > 0 ? ` ${unsupportedCount} Reel-Slots bleiben vorbereitet – lade ein Video hoch, um sie zu posten.` : "";
       setPostResult(`🎉 Posting-Plan gestartet. ${postedInfo}${scheduledInfo}${unsupportedInfo}`);
 
       if (postedIds.size > 0) {
@@ -231,7 +244,7 @@ export function ContentStudio({ project, images, onFirstOutput }: ContentStudioP
           </div>
           {output ? (
             <>
-              <PostingPlan images={images} onPlanChange={setPlannedPosts} tone={tone} businessType={project.businessType} />
+              <PostingPlan images={images} videos={videos} onPlanChange={setPlannedPosts} tone={tone} businessType={project.businessType} />
               <div className="publish-actions publish-final" style={{ marginTop: 28 }}>
                 <button className="button publish-button" disabled={isPosting} onClick={publishToInstagram} type="button">
                   {isPosting ? "Postet ..." : "Jetzt posten!"}
