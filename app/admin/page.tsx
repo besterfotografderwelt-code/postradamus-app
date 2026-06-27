@@ -6,7 +6,7 @@ export default function AdminPage() {
     <section className="content-page">
       <div className="eyebrow">Admin</div>
       <h1>Testzugänge</h1>
-      <p className="lead">Vergib 1 Jahr kostenlosen Studio-Zugang an Testkunden.</p>
+      <p className="lead">Vergib flexible Testzugänge und deaktiviere sie wieder, sobald ein Job erledigt ist.</p>
       <AdminGrantAccess />
       <AdminStats />
     </section>
