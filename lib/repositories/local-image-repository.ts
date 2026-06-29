@@ -14,8 +14,8 @@ export class LocalImageRepository implements ImageRepository {
     return loadProjectImages(projectId);
   }
 
-  async addImages(projectId: string, files: File[]): Promise<ProjectImage[]> {
-    return addProjectImages(projectId, files);
+  async addImages(projectId: string, files: File[], capturedDates?: (string | null)[]): Promise<ProjectImage[]> {
+    return addProjectImages(projectId, files, capturedDates);
   }
 
   async toggleFavorite(projectId: string, imageId: string): Promise<void> {

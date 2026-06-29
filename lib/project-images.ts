@@ -125,7 +125,11 @@ export async function loadProjectImages(projectId: string) {
   }
 }
 
-export async function addProjectImages(projectId: string, files: File[]) {
+export async function addProjectImages(
+  projectId: string,
+  files: File[],
+  capturedDates?: (string | null)[]
+) {
   const database = await openDatabase();
   try {
     const transaction = database.transaction(STORE_NAME, "readonly");
@@ -142,6 +146,7 @@ export async function addProjectImages(projectId: string, files: File[]) {
         isFavorite: false,
         tags: [],
         sortOrder: nextSortOrder + indexPosition,
+        capturedAt: capturedDates?.[indexPosition] ?? null,
         createdAt: new Date().toISOString()
       }))
     );

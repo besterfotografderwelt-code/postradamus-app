@@ -35,7 +35,7 @@ test("Login-Seite zeigt Anmeldeformular", async ({ page }) => {
   await page.goto("/login");
 
   await expect(page.getByRole("button", { name: "Anmelden" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Konto erstellen" })).toBeVisible();
+  await expect(page.locator("form").getByRole("button", { name: "Konto erstellen" })).toBeVisible();
   await expect(page.getByPlaceholder("Tobias Köstl")).toBeVisible();
 });
 
@@ -87,7 +87,7 @@ test("Startseite verkauft Postradamus mit Testphase", async ({ page }) => {
 test("ein neues Projekt wird über das Formular angelegt", async ({ page }) => {
   await seedOnboarding(page);
   await page.goto("/projects/new");
-  await page.getByRole("button", { name: "Mit Angaben starten" }).click();
+  await page.getByText("Mit Angaben starten").click();
   await page.getByLabel("Projektname").fill("Anna & Paul");
   await page.getByLabel("Datum").fill("2026-09-12");
   await page.getByLabel("Ort").fill("Feldkirch");
@@ -113,7 +113,7 @@ test("ein neues Projekt wird über das Formular angelegt", async ({ page }) => {
 test("ein Fotoprojekt kann ohne Paarangaben direkt gestartet werden", async ({ page }) => {
   await seedOnboarding(page);
   await page.goto("/projects/new");
-  await page.getByRole("button", { name: "Nur Fotos hochladen" }).click();
+  await page.getByText("Nur Fotos hochladen").click();
 
   await expect(page).toHaveURL(/\/projects\/.+/);
   await expect(page.getByRole("heading", { name: /Fotoprojekt vom/ })).toBeVisible();
@@ -149,7 +149,7 @@ test("JPG-Upload, Favorit und Tags bleiben nach Reload erhalten", async ({ page 
     mimeType: "image/jpeg",
     buffer: Buffer.from(imageBase64, "base64")
   };
-  await page.locator('input[type="file"]').setInputFiles(testImage);
+  await page.locator('input[accept="image/jpeg"]').setInputFiles(testImage);
 
   await expect(page.locator(".image-card")).toHaveCount(1);
   await expect(page.getByText("1 Bilder")).toBeVisible();
@@ -199,7 +199,7 @@ test("Demo-Content wird erzeugt und der Postingplan wird angezeigt", async ({ pa
   await seedOnboarding(page);
   // Create a project first
   await page.goto("/projects/new");
-  await page.getByRole("button", { name: "Nur Fotos hochladen" }).click();
+  await page.getByText("Nur Fotos hochladen").click();
   await expect(page).toHaveURL(/\/projects\/wf-[a-f0-9-]+/);
 
   // Extract project ID from URL
@@ -266,7 +266,7 @@ test("Caption wird nur einmal erzeugt und reagiert auf Stilwechsel", async ({ pa
   });
 
   await page.goto("/projects/new");
-  await page.getByRole("button", { name: "Nur Fotos hochladen" }).click();
+  await page.getByText("Nur Fotos hochladen").click();
 
   const imageBase64 = await page.evaluate(() => {
     const canvas = document.createElement("canvas");
@@ -278,7 +278,7 @@ test("Caption wird nur einmal erzeugt und reagiert auf Stilwechsel", async ({ pa
     context.fillRect(0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg", 0.9).split(",")[1];
   });
-  await page.locator('input[type="file"]').setInputFiles(
+  await page.locator('input[accept="image/jpeg"]').setInputFiles(
     Array.from({ length: 7 }, (_, index) => ({
       name: `caption-test-${index + 1}.jpg`,
       mimeType: "image/jpeg",

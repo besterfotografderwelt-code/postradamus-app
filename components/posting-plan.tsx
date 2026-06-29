@@ -266,7 +266,6 @@ function generatePostSlots(images: ProjectImage[], videos: ProjectVideo[], tone:
   const normalizedBusinessType = businessType.trim().toLowerCase();
   const isWeddingBusiness = normalizedBusinessType === "hochzeitsfotograf";
   const all = [...images].sort((a, b) => imagePriorityScore(b) - imagePriorityScore(a));
-  const favorites = all.filter((img) => img.isFavorite);
   if (all.length === 0) return [];
 
   const slots: PostSlot[] = [];
@@ -362,159 +361,131 @@ function generatePostSlots(images: ProjectImage[], videos: ProjectVideo[], tone:
     });
   }
 
-  // 3. Carousel of favorites
-  const favImgs = favorites.filter((img) => !usedImages.has(img.id));
-  if (favImgs.length >= 2) {
-    const carouselImgs = favImgs.slice(0, Math.min(8, favImgs.length));
-    mark(carouselImgs);
-    slots.push({ id: "carousel-fav", dayOffset: 3, time: "13:00", type: "carousel", images: carouselImgs, description: "Carousel: Die schönsten Momente", caption: nextCaption(), hashtags: baseHashtags[idx % baseHashtags.length] });
-  }
-
-  // 4. ALL remaining images as posts (singles or small carousels)
+  // 3. Smart carousels & singles: group by capture date, then sub-group by tags
+  // No image from a different capture date ever ends up in the same carousel.
   const remaining = all.filter((img) => !usedImages.has(img.id));
 
-  // Safety: ensure no duplicates
-  const seen = new Set(usedImages);
-  const uniqueRemaining = remaining.filter((img) => {
-    if (seen.has(img.id)) return false;
-    seen.add(img.id);
-    return true;
-  });
-  let postDay = 5;
-  let i = 0;
-  while (i < uniqueRemaining.length) {
-    const isMulti = uniqueRemaining.length > 10 && i % 5 === 0 && i + 2 < uniqueRemaining.length;
-    const count = isMulti ? 3 : 1;
-    const imgs = uniqueRemaining.slice(i, i + count);
-    mark(imgs);
-    const type: PostSlot["type"] = isMulti ? "carousel" : "single";
-    const imgName = imgs[0]?.name?.replace(/\.(jpg|jpeg)$/i, "") || `Bild ${i + 1}`;
-    const imgTags = imgs[0]?.tags || [];
-    const isCTA = i % 4 === 0;
-    const captionVariants = (() => {
-      const toneKey = normalizeTone(tone);
-      const toneSuffix: string[] = toneKey === "lustig"
-        ? ["Mit null Langeweile und einem dicken Grinsen im Feed. 😂🎉", "Gute Laune ist ansteckend. Wir sind heute der Beweis dafür."]
-        : toneKey === "emotional"
-          ? ["Dieser Moment geht unter die Haut, weit tiefer als Worte je könnten. ❤️", "Manche Sekunden tragen mehr Gefühl als ganze Tage."]
-          : toneKey === "motivierend"
-            ? ["Aufgeben ist keine Option. Der nächste Schritt beginnt genau hier. 💪🔥", "Disziplin schlägt Motivation jeden Tag. Heute wieder bewiesen."]
-            : toneKey === "romantisch"
-              ? ["Mit ganz viel Herz und einem Blick, der mehr sagt als tausend Worte. 🤍", "Leise Nähe, große Gefühle. Genau so fühlt sich dieser Moment an."]
-              : toneKey === "modern"
-                ? ["Clean. Direct. No bullshit. So halten wir das.", "Weniger Gelaber, mehr Style. Punkt."]
-                : toneKey === "kurz"
-                  ? ["Genau so.", "Mehr braucht's nicht."]
-                  : toneKey === "informativ"
-                    ? ["Die Fakten zählen, nicht die Verpackung. Hier sind sie, klar und sauber.", "Kein Hype, kein Blabla. Nur das, was wirklich zählt."]
-                    : toneKey === "lässig"
-                      ? ["Ganz easy. Kein Grund, sich zu verstellen oder groß aufzutrumpfen.", "So läuft's bei uns: entspannt, ehrlich, ohne Schnickschnack."]
-                      : [];
-
-      const makeToned = (specific: string) => {
-        if (toneSuffix.length === 0) return [specific];
-        // Alternate between tag-specific and tone-specific captions
-        return [specific, ...toneSuffix];
-      };
-
-      if (isWeddingBusiness) {
-        return makeToned(
-          isCTA
-            ? `Welcher Moment hat euch am meisten berührt? 💬 Schreibt es in die Kommentare - wir sind gespannt, welches Bild euch sofort wieder ins Gefühl von diesem Tag zurückholt.`
-            : imgTags.includes("Trauung")
-              ? `Wenn aus einem Ja-Wort tausend Erinnerungen werden, entsteht genau diese Art von Bild. Echt, nah und voller Bedeutung, damit der Moment später wieder ganz präsent wird. ${imgName}.`
-              : imgTags.includes("Paarshooting")
-                ? `Zwei Menschen, ein Moment, pure Magie. Dieses Bild zeigt, was Liebe wirklich bedeutet, wenn alles andere kurz leiser wird. ✨`
-                : imgTags.includes("Party")
-                  ? `Tanzen, bis die Schuhe fliegen. 🕺 Kein Inszenieren, nur echte Freude und eine Stimmung, die man auch später noch sofort wieder erkennt.`
-                  : imgTags.includes("Getting Ready")
-                    ? `Die Vorfreude im Blick, noch bevor der Trubel losgeht. Genau solche stillen Augenblicke werden später oft zu den wertvollsten Bildern des Tages.`
-                    : imgTags.includes("Details")
-                      ? `Sind es nicht oft die kleinen Dinge, die eine Hochzeit unvergesslich machen? Jedes Detail erzählt seine eigene Geschichte und gibt dem Tag seine eigene Handschrift.`
-                      : imgTags.includes("Dinner")
-                        ? `Gutes Essen, gute Gespräche und Momente, die in Erinnerung bleiben. Diese Stimmung lässt sich nicht inszenieren, nur ehrlich festhalten.`
-                        : imgTags.includes("Gruppenbilder")
-                          ? `Familie und Freunde sind die Menschen, die diesen Tag erst vollständig machen. Welches Gesicht zaubert dir beim Zurückschauen sofort ein Lächeln?`
-                          : `Ein Bild sagt mehr als tausend Worte, aber dieses hier erzählt noch ein bisschen mehr: echte Gefühle, Nähe und den Zauber dieses Tages in einem einzigen Moment.`
-        );
-      }
-
-      if (normalizedBusinessType === "fitness") {
-        return makeToned(
-          isCTA
-            ? `Welches Training hat dich diese Woche am meisten gefordert? 💬 Schreib es in die Kommentare - wir wollen wissen, wo du an deine Grenzen gehst.`
-            : imgTags.includes("Workout")
-              ? `Training, das sich lohnt, sieht man. Und spürt man erst recht. Heute wieder alles gegeben. 🔥`
-              : imgTags.includes("Transformation")
-                ? `Von hier nach da. Kein Filter, keine Tricks, nur echte Arbeit über Zeit. Genau so sieht Fortschritt aus.`
-                : imgTags.includes("Studio")
-                  ? `Hier passiert die Magie. Nicht durch Zauberei, sondern durch Wiederholung, Disziplin und den Willen, besser zu werden.`
-                  : imgTags.includes("Motivation")
-                    ? `Der Kopf sagt manchmal Nein, aber der Körper kann mehr, als man denkt. Genau da fängt Wachstum an. 💪`
-                    : imgTags.includes("Team") || imgTags.includes("Gruppe")
-                      ? `Gemeinsam stärker. Das ist kein Spruch, das ist Physik. Wer mit anderen trainiert, wächst schneller.`
-                      : imgTags.includes("Outdoor")
-                        ? `Frische Luft, freier Blick und ein Training, das den ganzen Körper fordert. So startet ein guter Tag.`
-                        : `Jeder Tag im Studio ist ein Schritt nach vorne. Manche sieht man, manche spürt man nur. Beide zählen.`
-        );
-      }
-
-      if (normalizedBusinessType === "restaurant") {
-        return makeToned(
-          isCTA
-            ? `Was war dein letztes richtiges Geschmackserlebnis? 💬 Schreib es in die Kommentare - wir lieben kulinarische Inspiration.`
-            : imgTags.includes("Gerichte")
-              ? `Frisch zubereitet, ehrlich angerichtet und mit genau dem Geschmack, der bleibt. Heute wieder mit Liebe gekocht.`
-              : imgTags.includes("Interior")
-                ? `Atmosphäre ist die geheime Zutat. Hier stimmt das Ambiente genauso wie der Geschmack.`
-                : imgTags.includes("Team")
-                  ? `Ein gutes Team macht den Unterschied zwischen einem Essen und einem Erlebnis. Danke an unsere Küchencrew.`
-                  : imgTags.includes("Zubereitung")
-                    ? `Handwerk, das man schmeckt. Jeder Handgriff zählt, bis es auf den Teller kommt.`
-                    : `Gutes Essen, gute Gesellschaft, gute Zeit. Mehr braucht es manchmal nicht für einen perfekten Abend.`
-        );
-      }
-
-      if (normalizedBusinessType === "produktfotograf") {
-        return makeToned(
-          isCTA
-            ? `Welches Detail fällt dir als Erstes auf? 💬 Schreib es in die Kommentare - wir sind gespannt auf deinen Blick.`
-            : imgTags.includes("Detail")
-              ? `Auf den zweiten Blick entscheidet sich Qualität. Deshalb zeigen wir, was nicht sofort sichtbar ist.`
-              : imgTags.includes("Weißer Hintergrund")
-                ? `Pur, klar und ohne Ablenkung. So kommt das Produkt genau so rüber, wie es gedacht ist.`
-                : imgTags.includes("Lifestyle")
-                  ? `Im Einsatz sieht man erst, was ein gutes Produkt wirklich kann. Nicht gestellt, sondern echt.`
-                  : `Design, das für sich spricht. Haptik, die überzeugt. Ein Produkt, das man zeigen darf.`
-        );
-      }
-
-      // generic
-      return makeToned(
-        isCTA
-          ? `Was nimmst du aus diesem Einblick mit? 💬 Schreib es in die Kommentare - deine Perspektive interessiert uns.`
-          : imgTags.includes("Team")
-            ? `Menschen machen den Unterschied. Hier sieht man, wer mit Leidenschaft dabei ist.`
-            : imgTags.includes("Detail") || imgTags.includes("Details")
-              ? `Oft sind es die kleinen Dinge, die den größten Eindruck hinterlassen. Hier ist eines davon.`
-              : `Ein Moment, der zeigt, worum es wirklich geht. Keine Show, sondern Substanz.`
-      );
-    })();
-    slots.push({
-      id: `post-${i}`,
-      dayOffset: postDay++,
-      time: getOptimalTime(postDay),
-      type,
-      images: imgs,
-      description: isMulti ? `Carousel: ${imgs.length} Bilder` : `Einzelbild: ${imgName}`,
-      caption: captionVariants[i % captionVariants.length],
-      hashtags: baseHashtags[i % baseHashtags.length]
-    });
-    i += count;
+  const dateGroups = new Map<string, ProjectImage[]>();
+  const undatedImages: ProjectImage[] = [];
+  for (const img of remaining) {
+    if (img.capturedAt) {
+      const date = img.capturedAt.split(/[T ]/)[0];
+      const group = dateGroups.get(date) ?? [];
+      group.push(img);
+      dateGroups.set(date, group);
+    } else {
+      undatedImages.push(img);
+    }
   }
 
-  // 5. Closing story
-  const closeStory = uniqueRemaining.filter((img) => !usedImages.has(img.id)).slice(i, i + 2);
+  let postDay = 3;
+  let slotCounter = 0;
+
+  function formatShortDate(iso: string) {
+    try {
+      const normalized = iso.replace(" ", "T");
+      return new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "short" }).format(new Date(normalized));
+    } catch { return iso; }
+  }
+
+  // Process each capture-date group
+  const sortedDates = [...dateGroups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  for (const [date, dateImages] of sortedDates) {
+    // Sub-group by primary tag within this date
+    const tagGroups = new Map<string, ProjectImage[]>();
+    const untagged: ProjectImage[] = [];
+    for (const img of dateImages) {
+      if (img.tags.length > 0) {
+        const primaryTag = img.tags[0];
+        const group = tagGroups.get(primaryTag) ?? [];
+        group.push(img);
+        tagGroups.set(primaryTag, group);
+      } else {
+        untagged.push(img);
+      }
+    }
+
+    // Carousels from tag groups with 2+ images
+    for (const [tag, tagImages] of tagGroups) {
+      if (tagImages.length >= 2) {
+        const imgs = tagImages.slice(0, 8);
+        mark(imgs);
+        slots.push({
+          id: `carousel-${slotCounter++}`,
+          dayOffset: postDay++,
+          time: getOptimalTime(postDay),
+          type: "carousel",
+          images: imgs,
+          description: `Carousel: ${tag} · ${formatShortDate(date)}`,
+          caption: nextCaption(),
+          hashtags: baseHashtags[idx % baseHashtags.length]
+        });
+      } else {
+        mark(tagImages);
+        for (const img of tagImages) {
+          slots.push({
+            id: `single-${slotCounter++}`,
+            dayOffset: postDay++,
+            time: getOptimalTime(postDay),
+            type: "single",
+            images: [img],
+            description: `Einzelbild: ${img.name.replace(/\.(jpg|jpeg)$/i, "")}`,
+            caption: nextCaption(),
+            hashtags: baseHashtags[idx % baseHashtags.length]
+          });
+        }
+      }
+    }
+
+    // Untagged images in this date → carousel if 2+, else singles
+    if (untagged.length >= 2) {
+      const imgs = untagged.slice(0, 8);
+      mark(imgs);
+      slots.push({
+        id: `carousel-${slotCounter++}`,
+        dayOffset: postDay++,
+        time: getOptimalTime(postDay),
+        type: "carousel",
+        images: imgs,
+        description: `Carousel · ${formatShortDate(date)}`,
+        caption: nextCaption(),
+        hashtags: baseHashtags[idx % baseHashtags.length]
+      });
+    } else {
+      mark(untagged);
+      for (const img of untagged) {
+        slots.push({
+          id: `single-${slotCounter++}`,
+          dayOffset: postDay++,
+          time: getOptimalTime(postDay),
+          type: "single",
+          images: [img],
+          description: `Einzelbild: ${img.name.replace(/\.(jpg|jpeg)$/i, "")}`,
+          caption: nextCaption(),
+          hashtags: baseHashtags[idx % baseHashtags.length]
+        });
+      }
+    }
+  }
+
+  // 4. Undated images: safe singles only – no risky mechanical carousels
+  for (const img of undatedImages) {
+    if (usedImages.has(img.id)) continue;
+    mark([img]);
+    slots.push({
+      id: `single-undated-${slotCounter++}`,
+      dayOffset: postDay++,
+      time: getOptimalTime(postDay),
+      type: "single",
+      images: [img],
+      description: `Einzelbild: ${img.name.replace(/\.(jpg|jpeg)$/i, "")}`,
+      caption: nextCaption(),
+      hashtags: baseHashtags[idx % baseHashtags.length]
+    });
+  }
+
+  // 5. Closing story – pick any remaining unused images
+  const closeStory = pick(2);
   if (closeStory.length > 0) {
     mark(closeStory);
     slots.push({
@@ -1186,12 +1157,14 @@ export function PostingPlan({ images, videos, tone = "", businessType = "sonstig
                     </p>
                     <div
                       className="crop-drag-area"
-                      onMouseDown={(e) => {
+                      onPointerDown={(e) => {
+                        e.preventDefault();
                         const rect = e.currentTarget.getBoundingClientRect();
                         const startX = e.clientX;
                         const startY = e.clientY;
                         const startPos = cropPositions[slot.id] ?? { x: 50, y: 50 };
-                        const onMove = (ev: MouseEvent) => {
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                        const onMove = (ev: PointerEvent) => {
                           const dx = ((ev.clientX - startX) / rect.width) * 100;
                           const dy = ((ev.clientY - startY) / rect.height) * 100;
                           setCropPositions({
@@ -1202,9 +1175,14 @@ export function PostingPlan({ images, videos, tone = "", businessType = "sonstig
                             }
                           });
                         };
-                        const onUp = () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
-                        window.addEventListener("mousemove", onMove);
-                        window.addEventListener("mouseup", onUp);
+                        const onUp = () => {
+                          window.removeEventListener("pointermove", onMove);
+                          window.removeEventListener("pointerup", onUp);
+                          window.removeEventListener("pointercancel", onUp);
+                        };
+                        window.addEventListener("pointermove", onMove);
+                        window.addEventListener("pointerup", onUp);
+                        window.addEventListener("pointercancel", onUp);
                       }}
                       style={{
                         aspectRatio: formatRatio,
@@ -1214,30 +1192,93 @@ export function PostingPlan({ images, videos, tone = "", businessType = "sonstig
                         borderRadius: 10,
                         border: "2px solid var(--accent)",
                         cursor: "grab",
-                        maxWidth: 260
+                        width: "100%",
+                        maxWidth: 360,
+                        touchAction: "none"
                       }}
                     />
-                    <div className="meta" style={{ marginTop: 14 }}>Bild tauschen</div>
+                    <div className="meta" style={{ marginTop: 14 }}>
+                      {slot.type === "reel" || slot.type === "story"
+                        ? "Bild tauschen"
+                        : effectiveImages.length > 1
+                          ? `Bilder (${effectiveImages.length} im Slot)`
+                          : "Bild tauschen"}
+                    </div>
+                    {slot.type === "reel" || slot.type === "story" ? (
+                      <p className="helper" style={{ margin: "4px 0 10px", fontSize: ".78rem" }}>
+                        Klick auf ein anderes Bild tauscht es aus.
+                      </p>
+                    ) : effectiveImages.length > 1 ? (
+                      <p className="helper" style={{ margin: "4px 0 10px", fontSize: ".78rem" }}>
+                        Klick auf ein Bild tauscht es aus. <strong>×</strong> entfernt es aus dem Carousel.
+                      </p>
+                    ) : (
+                      <p className="helper" style={{ margin: "4px 0 10px", fontSize: ".78rem" }}>
+                        Klick auf ein Bild tauscht es aus. Klick auf ⊕ fügt es als zweites Bild hinzu.
+                      </p>
+                    )}
                     <div className="image-swap-strip">
                       {images.slice(0, 20).map((img) => {
                         const isActive = effectiveImages.some((ei) => ei.id === img.id);
                         return (
-                          <button
-                            className={`image-swap-thumb ${isActive ? "is-selected" : ""}`}
-                            key={img.id}
-                            onClick={() => {
-                              const next = effectiveImages.map((ei) => ei.id === effectiveImages[cIdx]?.id ? img : ei);
-                              if (!isActive) {
-                                setImageOverrides({ ...imageOverrides, [slot.id]: next });
-                              }
-                            }}
-                            style={{ backgroundImage: `url(${img.thumbnailUrl})` }}
-                            title={img.name}
-                            type="button"
-                          />
+                          <div className={`image-swap-thumb-wrapper ${isActive ? "is-in-slot" : ""}`} key={img.id}>
+                            <button
+                              className={`image-swap-thumb ${isActive ? "is-selected" : ""}`}
+                              onClick={() => {
+                                const isMediaSlot = slot.type === "reel" || slot.type === "story";
+                                if (isActive && effectiveImages.length > 1) {
+                                  // Remove this image from the slot
+                                  const next = effectiveImages.filter((ei) => ei.id !== img.id);
+                                  setImageOverrides({ ...imageOverrides, [slot.id]: next });
+                                  if (cIdx >= next.length) {
+                                    setCarouselIndex({ ...carouselIndex, [slot.id]: Math.max(0, next.length - 1) });
+                                  }
+                                  if (next.length === 1 && !isMediaSlot) {
+                                    setSlotTypeOverrides((prev) => ({ ...prev, [slot.id]: "single" }));
+                                  }
+                                } else if (!isActive) {
+                                  // Reels/stories: always replace current. Carousels/multi: add to end.
+                                  const canAdd = !isMediaSlot && (effectiveImages.length >= 2 || slot.type === "carousel");
+                                  const next = canAdd
+                                    ? [...effectiveImages, img]
+                                    : effectiveImages.map((ei) => ei.id === effectiveImages[cIdx]?.id ? img : ei);
+                                  setImageOverrides({ ...imageOverrides, [slot.id]: next });
+                                  if (canAdd && effectiveImages.length === 1) {
+                                    setSlotTypeOverrides((prev) => ({ ...prev, [slot.id]: "carousel" }));
+                                  }
+                                }
+                              }}
+                              style={{ backgroundImage: `url(${img.thumbnailUrl})` }}
+                              title={isActive
+                                ? `${img.name} – Klick zum Entfernen`
+                                : slot.type === "reel" || slot.type === "story"
+                                  ? `${img.name} – Klick zum Tauschen`
+                                  : effectiveImages.length >= 2 || slot.type === "carousel"
+                                    ? `${img.name} – Klick zum Hinzufügen`
+                                    : `${img.name} – Klick zum Tauschen`}
+                              type="button"
+                            />
+                            {isActive && effectiveImages.length > 1 ? (
+                              <span className="image-swap-remove-mark" aria-hidden="true">×</span>
+                            ) : !isActive ? (
+                              <span className="image-swap-add-mark" aria-hidden="true">+</span>
+                            ) : null}
+                          </div>
                         );
                       })}
                     </div>
+                    {effectiveImages.length <= 1 && !slot.type.startsWith("reel") && !slot.type.startsWith("story") ? (
+                      <button
+                        className="button-secondary"
+                        onClick={() => {
+                          setSlotTypeOverrides((prev) => ({ ...prev, [slot.id]: "carousel" }));
+                        }}
+                        style={{ marginTop: 10, fontSize: ".82rem" }}
+                        type="button"
+                      >
+                        🖼️ Zum Carousel machen – weitere Bilder hinzufügen
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               ) : null}

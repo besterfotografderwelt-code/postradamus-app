@@ -76,6 +76,7 @@ async function mapImageRow(
     isFavorite: row.is_favorite,
     tags,
     sortOrder: row.sort_order,
+    capturedAt: row.captured_at ?? null,
     createdAt: row.created_at
   };
 }
@@ -95,7 +96,7 @@ export class SupabaseImageRepository implements ImageRepository {
     return images;
   }
 
-  async addImages(projectId: string, files: File[]): Promise<ProjectImage[]> {
+  async addImages(projectId: string, files: File[], capturedDates?: (string | null)[]): Promise<ProjectImage[]> {
     const {
       data: { user },
       error: authError
@@ -121,7 +122,8 @@ export class SupabaseImageRepository implements ImageRepository {
     const uploadedPaths: string[] = [];
 
     try {
-      for (const file of files) {
+      for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+        const file = files[fileIndex];
         const imageId = crypto.randomUUID();
         const storagePath = buildStoragePath(user.id, projectId, imageId);
         const thumbnailPath = buildThumbnailPath(user.id, projectId, imageId);
@@ -155,7 +157,8 @@ export class SupabaseImageRepository implements ImageRepository {
             filename: file.name,
             sort_order: nextSortOrder,
             is_favorite: false,
-            tags: []
+            tags: [],
+            captured_at: capturedDates?.[fileIndex] ?? null
           })
           .select()
           .single();

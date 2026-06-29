@@ -26,6 +26,7 @@ export type ProjectImage = {
   isFavorite: boolean;
   tags: ProjectImageTag[];
   sortOrder: number;
+  capturedAt: string | null;
   createdAt: string;
 };
 

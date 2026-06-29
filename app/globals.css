@@ -688,6 +688,7 @@ h3 { font-size: 1.15rem; }
 }
 .slot-caption-edit, .slot-hashtags-edit, .slot-mentions-field input {
   width: 100%;
+  max-width: 100%;
   margin-top: 4px;
   padding: 8px 10px;
   border: 1px solid var(--line);
@@ -710,6 +711,7 @@ h3 { font-size: 1.15rem; }
 .slot-mentions-field {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 .slot-mentions-field label {
   color: var(--muted);
@@ -1654,6 +1656,7 @@ h3 { font-size: 1.15rem; }
   gap: 20px;
 }
 .feed-post {
+  min-width: 0;
   border: 1px solid #e0e0e0;
   border-radius: 18px;
   overflow: hidden;
@@ -1689,8 +1692,10 @@ h3 { font-size: 1.15rem; }
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 .schedule-inline-edit input {
+  min-width: 0;
   padding: 4px 6px;
   border: 1px solid rgba(0,0,0,.14);
   border-radius: 6px;
@@ -1768,6 +1773,13 @@ h3 { font-size: 1.15rem; }
   padding: 0 16px 14px;
   display: grid;
   gap: 8px;
+  min-width: 0;
+}
+.feed-edit > *,
+.slot-tone-picker,
+.feed-edit-controls {
+  min-width: 0;
+  max-width: 100%;
 }
 .slot-expand-toggle {
   display: block;
@@ -1952,8 +1964,15 @@ h3 { font-size: 1.15rem; }
 /* Image swap & crop controls */
 .feed-edit-controls { margin-top: 12px; }
 .crop-pos-picker { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.crop-drag-area {
+  display: block;
+  max-width: 100%;
+  min-height: 180px;
+  user-select: none;
+}
 .image-swap-strip {
   display: flex;
+  max-width: 100%;
   gap: 4px;
   margin-top: 6px;
   overflow-x: auto;
@@ -2738,26 +2757,232 @@ h3 { font-size: 1.15rem; }
 }
 
 @media (max-width: 620px) {
+  .posting-plan {
+    margin-inline: -6px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .posting-plan-header {
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .posting-plan-header h3 {
+    font-size: 1.08rem;
+  }
+  .posting-plan-header p {
+    font-size: .9rem;
+  }
+  .plan-edit-hint {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    font-size: .86rem;
+  }
+  .cadence-panel {
+    min-width: 0;
+    width: 100%;
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: none;
+  }
+  .cadence-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 86px;
+    gap: 8px;
+  }
+  .cadence-select {
+    min-height: 44px;
+    border-radius: 12px;
+    font-size: .94rem;
+  }
+  .plan-calendar {
+    margin-bottom: 24px;
+    border-radius: 18px;
+  }
   .plan-calendar-toolbar {
+    gap: 14px;
     align-items: flex-start;
-    padding: 18px;
+    padding: 16px;
+  }
+  .plan-calendar-toolbar h4 {
+    font-size: 1rem;
   }
   .plan-calendar-navigation span { display: none; }
+  .plan-calendar-navigation button {
+    width: 36px;
+    height: 36px;
+    font-size: 1.35rem;
+  }
   .plan-calendar-grid {
     grid-template-columns: 50px repeat(7, 100px);
     grid-template-rows: 54px 350px;
     min-width: 750px;
   }
+  .plan-calendar-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+  .plan-calendar-post-copy {
+    display: grid;
+    gap: 1px;
+  }
+  .plan-calendar-post-copy strong {
+    font-size: .72rem;
+  }
+  .plan-calendar-post-copy small {
+    font-size: .64rem;
+  }
   .plan-calendar-legend {
     flex-wrap: wrap;
     gap: 9px 14px;
-    padding: 13px 18px;
+    padding: 13px 16px;
+    font-size: .72rem;
   }
   .plan-calendar-legend small {
     width: 100%;
     margin-left: 0;
   }
   .plan-posts-heading { margin-top: 28px; }
+  .feed-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .feed-post {
+    border-radius: 16px;
+  }
+  .feed-post-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px 14px 10px;
+  }
+  .feed-post-meta {
+    min-width: 0;
+  }
+  .feed-post-meta strong {
+    font-size: .96rem;
+  }
+  .feed-post-meta span {
+    font-size: .84rem;
+  }
+  .schedule-edit-pencil {
+    width: 36px;
+    height: 36px;
+    margin-top: 6px;
+    font-size: 1rem;
+  }
+  .schedule-inline-edit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 104px 42px;
+    gap: 8px;
+    width: 100%;
+  }
+  .schedule-inline-edit input {
+    min-height: 42px;
+    padding: 8px 9px;
+    font-size: .94rem;
+  }
+  .schedule-inline-date,
+  .schedule-inline-time {
+    width: 100%;
+  }
+  .schedule-inline-done {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    font-size: 1rem;
+  }
+  .slot-type-select {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 30px 9px 12px;
+    border-radius: 12px;
+    font-size: .9rem;
+  }
+  .feed-caption-preview {
+    padding: 12px 14px;
+    font-size: .9rem;
+  }
+  .feed-hashtags {
+    overflow-wrap: anywhere;
+    font-size: .82rem !important;
+  }
+  .slot-expand-toggle,
+  .post-delete-text {
+    min-height: 44px;
+    font-size: .9rem;
+  }
+  .feed-edit {
+    gap: 12px;
+    padding: 2px 14px 16px;
+  }
+  .tone-picker-inline {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tone-picker-inline .tone-chip {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding-inline: 13px;
+    font-size: .86rem;
+  }
+  .slot-caption-edit,
+  .slot-hashtags-edit,
+  .slot-mentions-field input {
+    min-height: 44px;
+    padding: 11px 12px;
+    border-radius: 10px;
+    font-size: .95rem;
+  }
+  .slot-caption-edit {
+    min-height: 150px;
+  }
+  .slot-hashtags-edit {
+    min-height: 96px;
+    overflow-wrap: anywhere;
+  }
+  .slot-mentions-field label,
+  .slot-mentions-field .helper,
+  .feed-edit-controls .helper,
+  .feed-edit-controls .meta,
+  .slot-tone-picker .meta {
+    font-size: .82rem;
+    line-height: 1.4;
+  }
+  .crop-drag-area {
+    max-width: 100% !important;
+    min-height: 230px;
+  }
+  .image-swap-strip {
+    gap: 8px;
+    margin-inline: -2px;
+    padding: 4px 2px 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .image-swap-thumb {
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
+  }
+  .image-swap-thumb:hover {
+    transform: none;
+  }
+  .feed-edit .button-secondary {
+    width: 100%;
+    min-height: 44px;
+    white-space: normal;
+  }
+  .plan-notes {
+    font-size: .9rem;
+  }
+  .plan-notes p {
+    font-size: .86rem;
+    line-height: 1.45;
+  }
   .landing-hero-visual {
     min-height: 320px;
     border-radius: 24px;
@@ -2780,7 +3005,6 @@ h3 { font-size: 1.15rem; }
   .flow-step-card { min-height: 240px; }
   .flow-step-icon { width: 112px; height: 112px; border-radius: 24px; }
   .flow-step-icon svg { width: 52px; height: 52px; }
-  .cadence-panel { min-width: unset; width: 100%; }
   .posting-plan-header { flex-direction: column; align-items: flex-start; }
   .compare-table-wrap {
     max-width: 100%;

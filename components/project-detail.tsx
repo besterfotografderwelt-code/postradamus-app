@@ -208,16 +208,18 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 
     setIsSaving(true);
     try {
-      const added = await getImageRepository().addImages(project.id, accepted);
+      // Extract EXIF dates before adding to storage
+      const dateInfos = await Promise.all(accepted.map(extractImageDate));
+      const capturedDates = dateInfos.map((info) => info.dateTaken);
+
+      const added = await getImageRepository().addImages(project.id, accepted, capturedDates);
       const nextImages = [...imagesRef.current, ...added].sort((a, b) => a.sortOrder - b.sortOrder);
       imagesRef.current = nextImages;
       setImages(nextImages);
 
-      // Extract EXIF dates and check for mixed events
-      const dateInfos = await Promise.all(accepted.map(extractImageDate));
+      // Update display state with extracted dates
       const newDates: Record<string, string | null> = {};
       for (const info of dateInfos) {
-        // Match by filename (the image name maps to our stored images)
         const matched = added.find((img) => img.name === info.name);
         if (matched) newDates[matched.id] = info.dateTaken;
       }

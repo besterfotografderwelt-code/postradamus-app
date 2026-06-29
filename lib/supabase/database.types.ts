@@ -93,6 +93,7 @@ export type Database = {
           sort_order: number;
           is_favorite: boolean;
           tags: string[];
+          captured_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -105,6 +106,7 @@ export type Database = {
           sort_order?: number;
           is_favorite?: boolean;
           tags?: string[];
+          captured_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
