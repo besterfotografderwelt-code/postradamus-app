@@ -1794,6 +1794,22 @@ h3 { font-size: 1.15rem; }
   font-weight: 600;
 }
 .slot-expand-toggle:hover { background: #f5f5f7; }
+.slot-edit-done {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: var(--accent);
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 700;
+}
+.slot-edit-done:hover { background: var(--accent-hover); }
 
 /* Cadence controls */
 .cadence-panel {
@@ -2975,6 +2991,12 @@ h3 { font-size: 1.15rem; }
     width: 100%;
     min-height: 44px;
     white-space: normal;
+  }
+  .slot-edit-done {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 4px;
+    font-size: .96rem;
   }
   .plan-notes {
     font-size: .9rem;

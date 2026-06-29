@@ -1280,6 +1280,13 @@ export function PostingPlan({ images, videos, tone = "", businessType = "sonstig
                       </button>
                     ) : null}
                   </div>
+                  <button
+                    className="slot-edit-done"
+                    onClick={() => setExpandedSlot(null)}
+                    type="button"
+                  >
+                    Fertig
+                  </button>
                 </div>
               ) : null}
             </div>
