@@ -35,8 +35,11 @@ export async function POST(request: Request) {
   });
 
   if (error) {
+    const msg = error.message.includes("User already") || error.message.includes("already registered")
+      ? "Diese E-Mail-Adresse ist bereits registriert. Melde dich an oder setze dein Passwort zurück."
+      : error.message;
     const redirectUrl = new URL("/login", request.url);
-    redirectUrl.searchParams.set("error", error.message);
+    redirectUrl.searchParams.set("error", msg);
     return NextResponse.redirect(redirectUrl);
   }
 

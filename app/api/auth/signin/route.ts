@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const password = String(fd.get("password") ?? "");
 
   if (!email || password.length < 8) {
-    const diag = `E-Mail: \"${email}\" · Passwort-Länge: ${password.length}`;
+    const diag = `E-Mail und ein Passwort mit mindestens 8 Zeichen sind erforderlich.`;
     return NextResponse.redirect(
       new URL(`/login?error=${encodeURIComponent(diag)}`, request.url)
     );
@@ -24,9 +24,11 @@ export async function POST(request: Request) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    const diag = `${error.message} (E-Mail: ${email.slice(0, 3)}***, PW-Länge: ${password.length})`;
+    const msg = error.message.includes("Invalid login") || error.message.includes("invalid")
+      ? "E-Mail oder Passwort stimmen nicht."
+      : error.message;
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(diag)}`, request.url)
+      new URL(`/login?error=${encodeURIComponent(msg)}`, request.url)
     );
   }
 

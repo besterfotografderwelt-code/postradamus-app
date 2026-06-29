@@ -354,6 +354,7 @@ h3 { font-size: 1.15rem; }
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
+.field-hint { display: block; color: var(--muted); font-size: .78rem; font-weight: 400; margin-top: 2px; }
 .field textarea { min-height: 110px; resize: vertical; }
 .optional-fields { border-top: 1px solid #ececf0; padding-top: 18px; }
 .optional-fields summary { color: var(--accent); cursor: pointer; font-weight: 600; }
@@ -1896,17 +1897,48 @@ h3 { font-size: 1.15rem; }
   padding-bottom: 4px;
 }
 .image-swap-thumb {
-  width: 48px;
-  height: 48px;
+  width: 80px;
+  height: 80px;
   border: 2px solid transparent;
   border-radius: 8px;
   background-size: cover;
   background-position: center;
   cursor: pointer;
   flex-shrink: 0;
+  transition: transform .12s;
 }
-.image-swap-thumb:hover { border-color: var(--accent); }
+.image-swap-thumb:hover { border-color: var(--accent); transform: scale(1.08); }
 .image-swap-thumb.is-selected { border-color: var(--good); }
+
+.image-swap-thumb-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+.image-swap-thumb-wrapper.is-in-slot .image-swap-thumb {
+  border-color: var(--good);
+}
+.image-swap-remove-mark,
+.image-swap-add-mark {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: .7rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  color: #fff;
+  pointer-events: none;
+  z-index: 1;
+}
+.image-swap-remove-mark {
+  background: #e74c3c;
+}
+.image-swap-add-mark {
+  background: var(--accent);
+}
 
 /* Date badge on image cards */
 .image-date-badge {

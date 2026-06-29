@@ -466,6 +466,7 @@ export function KundenbereichDashboard() {
               onChange={(e) => setPwNew(e.target.value)}
               autoComplete="new-password"
             />
+            <span className="field-hint">Mindestens 8 Zeichen. Empfohlen: Groß- &amp; Kleinbuchstaben, Zahl und Sonderzeichen.</span>
           </label>
           <label className="contact-field">
             <span>Neues Passwort bestätigen</span>

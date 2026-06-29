@@ -29,7 +29,12 @@ export async function signIn(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) loginRedirect(error.message);
+  if (error) {
+    const msg = error.message.includes("Invalid login") || error.message.includes("invalid")
+      ? "E-Mail oder Passwort stimmen nicht."
+      : error.message;
+    loginRedirect(msg);
+  }
 
   // Check if user has any active plan; if not, send to pricing
   const { data: profile } = await supabase
@@ -85,7 +90,12 @@ export async function signUp(formData: FormData) {
 
   console.log("[signUp] result:", { user: !!data?.user, session: !!data?.session, error: error?.message });
 
-  if (error) loginRedirect(error.message);
+  if (error) {
+    const msg = error.message.includes("User already") || error.message.includes("already registered")
+      ? "Diese E-Mail-Adresse ist bereits registriert. Melde dich an."
+      : error.message;
+    loginRedirect(msg);
+  }
   loginRedirect("Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.", "message");
 }
 

@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <div className="auth-wrap">
       <section className="auth-card panel">
         <div>
-          <div className="eyebrow">Anmelden oder starten</div>
+          <div className="eyebrow">Konto erstellen oder anmelden</div>
           <h2>Zugang zu Postradamus</h2>
         </div>
 
@@ -43,23 +43,24 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               autoComplete="current-password"
               required
             />
+            <span className="field-hint">Mindestens 8 Zeichen. Empfohlen: Groß- &amp; Kleinbuchstaben, Zahl und Sonderzeichen.</span>
           </div>
           <div className="auth-actions">
-            <button className="button" type="submit">
-              Anmelden
-            </button>
             <button
-              className="button-secondary"
+              className="button"
               type="submit"
               formMethod="POST"
               formAction="/api/auth/signup"
             >
               Konto erstellen
             </button>
+            <button className="button-secondary" type="submit">
+              Anmelden
+            </button>
           </div>
         </form>
         <p className="helper">
-          Neu hier? Gib deinen Namen ein und klick auf &bdquo;Konto erstellen&ldquo;.
+          Schon ein Konto? Gib deine E-Mail und dein Passwort ein und klick auf &bdquo;Anmelden&ldquo;.
         </p>
         <p className="helper" style={{ marginTop: 8 }}>
           <Link href="/kundenbereich?view=password-reset" style={{ color: "var(--accent)" }}>

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -10,6 +12,49 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+
+  // Exchange the token_hash from the URL for a session via verifyOtp
+  useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setError("Supabase ist nicht konfiguriert.");
+      setVerifying(false);
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    const tokenHash = url.searchParams.get("token_hash");
+    const type = url.searchParams.get("type");
+
+    if (!tokenHash || type !== "recovery") {
+      setError("Ungültiger oder abgelaufener Link. Bitte fordere einen neuen Link zum Zurücksetzen an.");
+      setVerifying(false);
+      return;
+    }
+
+    async function verify() {
+      try {
+        const supabase = createClient();
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash!,
+          type: "recovery",
+        });
+
+        if (verifyError) {
+          setError(verifyError.message || "Der Link ist ungültig oder abgelaufen.");
+        } else {
+          setVerified(true);
+        }
+      } catch {
+        setError("Verbindungsfehler. Bitte versuch es später noch einmal.");
+      } finally {
+        setVerifying(false);
+      }
+    }
+
+    verify();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,7 +71,6 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      // Supabase client exchanges the code automatically via the URL
       const res = await fetch("/api/auth/update-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,12 +102,33 @@ export default function ResetPasswordPage() {
               Dein neues Passwort ist aktiv. Du wirst zur Anmeldung weitergeleitet …
             </p>
           </>
+        ) : verifying ? (
+          <>
+            <div className="eyebrow">Passwort zurücksetzen</div>
+            <h2>Link wird geprüft …</h2>
+            <p style={{ color: "var(--muted)", marginBottom: 20 }}>
+              Einen Moment bitte, wir verifizieren deinen Link.
+            </p>
+          </>
+        ) : error && !verified ? (
+          <>
+            <div className="eyebrow">Passwort zurücksetzen</div>
+            <h2>Link ungültig</h2>
+            <div className="form-message form-message-error" role="alert">
+              {error}
+            </div>
+            <p style={{ marginTop: 16 }}>
+              <a href="/kundenbereich?view=password-reset" style={{ color: "var(--accent)" }}>
+                Neuen Link anfordern →
+              </a>
+            </p>
+          </>
         ) : (
           <>
             <div className="eyebrow">Passwort zurücksetzen</div>
             <h2>Neues Passwort wählen</h2>
             <p style={{ color: "var(--muted)", marginBottom: 20 }}>
-              Gib dein neues Passwort ein. Mindestens 8 Zeichen.
+              Mindestens 8 Zeichen. Empfohlen: Groß- &amp; Kleinbuchstaben, Zahl und Sonderzeichen.
             </p>
 
             {error && (
@@ -84,6 +149,7 @@ export default function ResetPasswordPage() {
                   type="password"
                   value={password}
                 />
+                <span className="field-hint">Mindestens 8 Zeichen. Empfohlen: Groß- &amp; Kleinbuchstaben, Zahl und Sonderzeichen.</span>
               </div>
               <div className="field">
                 <label htmlFor="confirm">Passwort bestätigen</label>
