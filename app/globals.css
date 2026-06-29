@@ -1376,6 +1376,23 @@ h3 { font-size: 1.15rem; }
   .workflow-step { padding: 38px 0; }
   .step-number { width: 1.15em; height: 1.15em; }
   .landing-hero-copy { padding-right: 0; }
+  .compare-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+  .compare-table {
+    min-width: 480px;
+    font-size: .85rem;
+  }
+  .compare-table th,
+  .compare-table td {
+    padding: 10px 10px;
+  }
+  .compare-table thead th {
+    padding-top: 14px;
+    padding-bottom: 10px;
+  }
 }
 
 @media (max-width: 520px) {
