@@ -1321,7 +1321,9 @@ h3 { font-size: 1.15rem; }
   .brand-logo { height: 28px; width: auto; border-radius: 7px; }
   .brand strong { font-size: .95rem; }
   .hero-simple { padding: 80px 0 70px; }
+  .hero-simple h1 { font-size: clamp(2rem, 10vw, 3.8rem); }
   .project-cards, .content-studio-grid, .auth-wrap, .publish-columns { grid-template-columns: 1fr; }
+  .auth-intro, .auth-card { padding: 34px 26px; }
   .site-footer {
     display: grid;
     margin-top: 70px;
@@ -1339,6 +1341,7 @@ h3 { font-size: 1.15rem; }
   .image-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .workflow-step { padding: 38px 0; }
   .step-number { width: 1.15em; height: 1.15em; }
+  .landing-hero-copy { padding-right: 0; }
 }
 
 @media (max-width: 520px) {
@@ -1348,6 +1351,15 @@ h3 { font-size: 1.15rem; }
   .image-grid { grid-template-columns: 1fr; }
   .image-card img { height: 260px; }
   .section-header { align-items: flex-start; }
+  .auth-intro, .auth-card { padding: 30px 22px; }
+  .auth-actions { flex-direction: column; }
+  .auth-actions .button,
+  .auth-actions .button-secondary { width: 100%; }
+  .landing-hero-visual { min-height: 280px; border-radius: 26px; }
+  .landing-actions { flex-direction: column; }
+  .landing-actions a { width: 100%; justify-content: center; }
+  .hero-simple { padding: 60px 0 50px; }
+  .hero-simple h1 { font-size: clamp(1.9rem, 9vw, 3rem); }
 }
 
 /* Feed-based Posting Plan */
@@ -2884,4 +2896,202 @@ h3 { font-size: 1.15rem; }
   text-decoration: line-through;
   font-size: .88rem;
   margin-bottom: 2px;
+}
+
+/* ── Mobile: sehr kleine Smartphones (≤ 380px) ── */
+@media (max-width: 380px) {
+  .shell {
+    width: min(100% - 20px, 1120px);
+  }
+
+  /* Auth/Login */
+  .auth-intro, .auth-card {
+    padding: 26px 18px;
+    border-radius: 22px;
+  }
+  .auth-actions {
+    flex-direction: column;
+  }
+  .auth-actions .button,
+  .auth-actions .button-secondary {
+    width: 100%;
+  }
+  .auth-wrap {
+    margin-top: 24px;
+  }
+
+  /* Content pages */
+  .content-page {
+    margin-top: 32px;
+  }
+  .content-page h1 {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  /* Landing page */
+  .landing-hero {
+    gap: 32px;
+    padding: 40px 0 48px;
+  }
+  .landing-hero-copy {
+    padding-right: 0;
+  }
+  .landing-hero h1 {
+    font-size: clamp(1.8rem, 7.5vw, 2.4rem);
+    margin-bottom: 16px;
+  }
+  .landing-hero p {
+    font-size: 1rem;
+  }
+  .landing-actions {
+    flex-direction: column;
+    margin-top: 24px;
+  }
+  .landing-actions a {
+    width: 100%;
+    justify-content: center;
+  }
+  .landing-hero-visual {
+    min-height: 240px;
+    border-radius: 22px;
+  }
+  .landing-strip article {
+    min-height: auto;
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+  .landing-strip h2 {
+    font-size: 1.25rem;
+  }
+  .landing-section-head h2 {
+    font-size: clamp(1.7rem, 7vw, 2.8rem);
+  }
+
+  /* Flow steps */
+  .flow-step-card {
+    min-height: 220px;
+    padding: 22px 16px;
+    gap: 18px;
+  }
+  .flow-step-icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 22px;
+  }
+  .flow-step-icon svg {
+    width: 44px;
+    height: 44px;
+  }
+  .flow-step-card strong {
+    font-size: 1.05rem;
+  }
+
+  /* Product showcase */
+  .product-board {
+    min-height: 340px;
+    grid-template-columns: 1fr;
+  }
+  .product-sidebar {
+    display: none;
+  }
+  .product-main {
+    padding: 16px;
+  }
+
+  /* FAQ / Final */
+  .landing-final {
+    padding: 48px 18px 48px;
+    border-radius: 22px;
+  }
+  .landing-final h2 {
+    font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+  .waitlist-input-row {
+    flex-direction: column;
+  }
+
+  /* Pricing */
+  .pricing-card {
+    padding: 22px 18px;
+    border-radius: 22px;
+  }
+
+  /* Kundenbereich */
+  .kunden-card {
+    padding: 20px;
+    border-radius: 20px;
+  }
+  .kunden-form {
+    gap: 14px;
+  }
+
+  /* General */
+  h1 {
+    font-size: clamp(2rem, 8vw, 3.2rem);
+  }
+  h2 {
+    font-size: clamp(1.4rem, 5vw, 1.8rem);
+  }
+  .lead {
+    font-size: 1.1rem;
+  }
+  .site-footer {
+    gap: 16px;
+    margin-top: 48px;
+    padding: 20px 0 28px;
+  }
+
+  /* Form elements */
+  .field input, .field select, .field textarea {
+    padding: 12px;
+    border-radius: 11px;
+  }
+
+  /* Nav sidebar */
+  .nav {
+    width: min(260px, 85vw);
+  }
+
+  /* Projects */
+  .project-cards,
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .project-row {
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 16px 14px;
+  }
+  .empty-dashboard {
+    padding: 32px 18px;
+  }
+
+  /* Form message cards */
+  .form-card {
+    padding: 22px 16px;
+    border-radius: 20px;
+  }
+
+  /* Instagram preview */
+  .publish-preview {
+    position: static;
+    margin-top: 16px;
+  }
+
+  /* Waitlist */
+  .waitlist-form {
+    max-width: 100%;
+  }
+
+  /* Top bar */
+  .topbar {
+    height: 56px;
+  }
+  .brand strong {
+    font-size: .92rem;
+  }
+  .brand-logo {
+    height: 26px;
+  }
 }
