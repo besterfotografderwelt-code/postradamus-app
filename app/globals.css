@@ -1377,6 +1377,7 @@ h3 { font-size: 1.15rem; }
   .step-number { width: 1.15em; height: 1.15em; }
   .landing-hero-copy { padding-right: 0; }
   .compare-table-wrap {
+    max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 8px;
