@@ -1391,6 +1391,13 @@ h3 { font-size: 1.15rem; }
   .landing-actions a { width: 100%; justify-content: center; }
   .hero-simple { padding: 60px 0 50px; }
   .hero-simple h1 { font-size: clamp(1.9rem, 9vw, 3rem); }
+  .waitlist-input-row {
+    flex-direction: column;
+  }
+  .waitlist-input,
+  .waitlist-button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 420px) {

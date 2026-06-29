@@ -61,13 +61,13 @@ const faqs = [
 ];
 
 function StarterPrice({ price, earlyBirdPrice }: { price: string; earlyBirdPrice: string }) {
-  const [isEarlyBird, setIsEarlyBird] = useState(false);
+  const [isEarlyBird, setIsEarlyBird] = useState(true);
 
   useEffect(() => {
     fetch("/api/early-bird")
       .then((res) => res.json())
       .then((data: { active: boolean }) => {
-        if (data.active) setIsEarlyBird(true);
+        if (!data.active) setIsEarlyBird(false);
       })
       .catch(() => {});
   }, []);
