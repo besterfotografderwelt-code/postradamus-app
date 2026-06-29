@@ -17,7 +17,12 @@
 
 * { box-sizing: border-box; }
 
-html { min-height: 100%; background: var(--bg); }
+img, svg, video, canvas, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+html { min-height: 100%; background: var(--bg); overflow-x: hidden; }
 
 body {
   margin: 0;
@@ -26,8 +31,6 @@ body {
   background: var(--bg);
   font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-  max-width: 100vw;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -38,7 +41,6 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   width: min(1120px, calc(100% - 40px));
   margin: 0 auto;
   padding-bottom: 80px;
-  overflow-x: hidden;
 }
 
 .topbar {
@@ -1380,14 +1382,24 @@ h3 { font-size: 1.15rem; }
   .image-card img { height: 260px; }
   .section-header { align-items: flex-start; }
   .auth-intro, .auth-card { padding: 30px 22px; }
-  .auth-actions { flex-direction: column; }
-  .auth-actions .button,
-  .auth-actions .button-secondary { width: 100%; }
   .landing-hero-visual { min-height: 280px; border-radius: 26px; }
   .landing-actions { flex-direction: column; }
   .landing-actions a { width: 100%; justify-content: center; }
   .hero-simple { padding: 60px 0 50px; }
   .hero-simple h1 { font-size: clamp(1.9rem, 9vw, 3rem); }
+}
+
+@media (max-width: 420px) {
+  .auth-mode-tabs {
+    gap: 4px;
+    padding: 4px;
+    border-radius: 12px;
+  }
+  .auth-mode-tab {
+    padding: 9px;
+    font-size: .84rem;
+    border-radius: 9px;
+  }
 }
 
 /* Feed-based Posting Plan */
@@ -2131,7 +2143,6 @@ h3 { font-size: 1.15rem; }
   display: grid;
   gap: clamp(72px, 10vw, 120px);
   padding-bottom: 40px;
-  overflow-x: hidden;
 }
 
 .landing-hero {
@@ -2930,197 +2941,211 @@ h3 { font-size: 1.15rem; }
 /* ── Mobile: sehr kleine Smartphones (≤ 380px) ── */
 @media (max-width: 380px) {
   .shell {
-    width: min(100% - 20px, 1120px);
+    width: min(100% - 24px, 1120px);
   }
 
   /* Auth/Login */
   .auth-intro, .auth-card {
-    padding: 26px 18px;
-    border-radius: 22px;
-  }
-  .auth-actions {
-    flex-direction: column;
-  }
-  .auth-actions .button,
-  .auth-actions .button-secondary {
-    width: 100%;
+    padding: 24px 16px;
+    border-radius: 20px;
   }
   .auth-wrap {
-    margin-top: 24px;
+    margin-top: 20px;
+  }
+  .auth-mode-tab {
+    font-size: .85rem;
+    padding: 9px 10px;
   }
 
   /* Content pages */
   .content-page {
-    margin-top: 32px;
+    margin-top: 28px;
   }
   .content-page h1 {
-    font-size: clamp(2rem, 8vw, 3rem);
+    font-size: clamp(1.9rem, 9vw, 2.8rem);
+    max-width: none;
+  }
+  .content-page .lead {
+    font-size: 1rem;
   }
 
   /* Landing page */
+  .landing-page {
+    gap: 48px;
+  }
   .landing-hero {
-    gap: 32px;
-    padding: 40px 0 48px;
+    gap: 28px;
+    padding: 32px 0 40px;
   }
   .landing-hero-copy {
     padding-right: 0;
+    max-width: none;
   }
   .landing-hero h1 {
-    font-size: clamp(1.8rem, 7.5vw, 2.4rem);
-    margin-bottom: 16px;
+    font-size: clamp(1.7rem, 8vw, 2.2rem);
+    margin-bottom: 14px;
   }
   .landing-hero p {
-    font-size: 1rem;
-  }
-  .landing-actions {
-    flex-direction: column;
-    margin-top: 24px;
-  }
-  .landing-actions a {
-    width: 100%;
-    justify-content: center;
+    font-size: .98rem;
   }
   .landing-hero-visual {
-    min-height: 240px;
-    border-radius: 22px;
+    min-height: 220px;
+    border-radius: 20px;
   }
   .landing-strip article {
     min-height: auto;
-    padding: 22px 18px;
-    border-radius: 20px;
+    padding: 20px 16px;
+    border-radius: 18px;
   }
   .landing-strip h2 {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
   }
   .landing-section-head h2 {
-    font-size: clamp(1.7rem, 7vw, 2.8rem);
+    font-size: clamp(1.6rem, 7.5vw, 2.4rem);
   }
 
   /* Flow steps */
+  .flow-steps {
+    gap: 8px;
+  }
   .flow-step-card {
-    min-height: 220px;
-    padding: 22px 16px;
-    gap: 18px;
+    min-height: 200px;
+    padding: 20px 14px;
+    gap: 14px;
   }
   .flow-step-icon {
-    width: 96px;
-    height: 96px;
-    border-radius: 22px;
+    width: 88px;
+    height: 88px;
+    border-radius: 20px;
   }
   .flow-step-icon svg {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
   }
   .flow-step-card strong {
-    font-size: 1.05rem;
+    font-size: 1rem;
   }
 
   /* Product showcase */
   .product-board {
-    min-height: 340px;
+    min-height: 300px;
     grid-template-columns: 1fr;
   }
-  .product-sidebar {
-    display: none;
-  }
   .product-main {
-    padding: 16px;
+    padding: 14px;
   }
 
   /* FAQ / Final */
   .landing-final {
-    padding: 48px 18px 48px;
-    border-radius: 22px;
+    padding: 40px 16px 40px;
+    border-radius: 20px;
   }
   .landing-final h2 {
-    font-size: clamp(1.5rem, 7vw, 2rem);
+    font-size: clamp(1.4rem, 7vw, 1.8rem);
   }
-  .waitlist-input-row {
-    flex-direction: column;
+  .faq-grid article {
+    padding: 20px 16px;
+    border-radius: 18px;
   }
 
   /* Pricing */
   .pricing-card {
-    padding: 22px 18px;
-    border-radius: 22px;
+    padding: 20px 16px;
+    border-radius: 20px;
+  }
+
+  /* Feature list */
+  .feature-list li {
+    padding: 10px 12px;
   }
 
   /* Kundenbereich */
   .kunden-card {
-    padding: 20px;
-    border-radius: 20px;
+    padding: 18px;
+    border-radius: 18px;
   }
   .kunden-form {
-    gap: 14px;
+    gap: 12px;
   }
 
-  /* General */
+  /* General typography */
   h1 {
-    font-size: clamp(2rem, 8vw, 3.2rem);
+    font-size: clamp(1.9rem, 8vw, 2.8rem);
   }
   h2 {
-    font-size: clamp(1.4rem, 5vw, 1.8rem);
+    font-size: clamp(1.3rem, 5vw, 1.7rem);
   }
   .lead {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
   }
+
+  /* Footer */
   .site-footer {
-    gap: 16px;
-    margin-top: 48px;
-    padding: 20px 0 28px;
+    gap: 14px;
+    margin-top: 40px;
+    padding: 18px 0 24px;
   }
 
   /* Form elements */
   .field input, .field select, .field textarea {
-    padding: 12px;
-    border-radius: 11px;
+    padding: 11px;
+    border-radius: 10px;
+    font-size: .95rem;
   }
 
   /* Nav sidebar */
   .nav {
-    width: min(260px, 85vw);
+    width: min(260px, 88vw);
   }
 
   /* Projects */
   .project-cards,
   .content-grid {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 8px;
   }
   .project-row {
     grid-template-columns: 1fr auto;
-    gap: 8px;
-    padding: 16px 14px;
+    gap: 6px;
+    padding: 14px 12px;
   }
   .empty-dashboard {
-    padding: 32px 18px;
+    padding: 28px 14px;
   }
 
   /* Form message cards */
   .form-card {
-    padding: 22px 16px;
-    border-radius: 20px;
+    padding: 20px 14px;
+    border-radius: 18px;
+  }
+
+  /* CTA buttons */
+  .button, .button-secondary {
+    min-height: 46px;
+  }
+
+  /* Top bar */
+  .topbar {
+    height: 52px;
+  }
+  .brand strong {
+    font-size: .9rem;
+  }
+  .brand-logo {
+    height: 24px;
   }
 
   /* Instagram preview */
   .publish-preview {
     position: static;
-    margin-top: 16px;
+    margin-top: 14px;
   }
 
-  /* Waitlist */
-  .waitlist-form {
-    max-width: 100%;
+  /* Project detail */
+  .image-grid {
+    grid-template-columns: 1fr;
   }
-
-  /* Top bar */
-  .topbar {
-    height: 56px;
-  }
-  .brand strong {
-    font-size: .92rem;
-  }
-  .brand-logo {
-    height: 26px;
+  .image-card img {
+    height: 220px;
   }
 }
