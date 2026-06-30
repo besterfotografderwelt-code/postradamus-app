@@ -163,7 +163,7 @@ export function PricingContent() {
                 <td>Unlimited*</td>
               </tr>
               <tr>
-                <td>KI-Captions &amp; Hashtags</td>
+                <td>KI-Captions</td>
                 <td>✓</td>
                 <td className="compare-featured">✓</td>
                 <td>✓</td>
@@ -175,13 +175,13 @@ export function PricingContent() {
                 <td>✓</td>
               </tr>
               <tr>
-                <td>Instagram-Vorschau</td>
+                <td>IG-Vorschau</td>
                 <td>✓</td>
                 <td className="compare-featured">✓</td>
                 <td>✓</td>
               </tr>
               <tr>
-                <td>Direkte Instagram-Veröffentlichung</td>
+                <td>IG-Direktpost</td>
                 <td>✓</td>
                 <td className="compare-featured">✓</td>
                 <td>✓</td>
@@ -204,24 +204,7 @@ export function PricingContent() {
                 <td className="compare-featured">✓</td>
                 <td>✓</td>
               </tr>
-              <tr>
-                <td>Mehrere Projekte gleichzeitig</td>
-                <td>1 Projekt</td>
-                <td className="compare-featured">3 Projekte</td>
-                <td>10 Projekte</td>
-              </tr>
-              <tr>
-                <td>Eigener Schreibstil (Style-Analyse)</td>
-                <td>–</td>
-                <td className="compare-featured">✓</td>
-                <td>✓</td>
-              </tr>
-              <tr>
-                <td>Priorität für neue Funktionen</td>
-                <td>–</td>
-                <td className="compare-featured">–</td>
-                <td>✓</td>
-              </tr>
+
             </tbody>
           </table>
           <p className="helper" style={{ marginTop: 12 }}>
