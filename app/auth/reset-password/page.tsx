@@ -5,6 +5,27 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
+function getUrlParams() {
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+
+  return {
+    accessToken:
+      url.searchParams.get("access_token") ?? hashParams.get("access_token"),
+    code: url.searchParams.get("code") ?? hashParams.get("code"),
+    error:
+      url.searchParams.get("error_description") ??
+      hashParams.get("error_description") ??
+      url.searchParams.get("error") ??
+      hashParams.get("error"),
+    refreshToken:
+      url.searchParams.get("refresh_token") ?? hashParams.get("refresh_token"),
+    tokenHash:
+      url.searchParams.get("token_hash") ?? hashParams.get("token_hash"),
+    type: url.searchParams.get("type") ?? hashParams.get("type"),
+  };
+}
+
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -15,7 +36,8 @@ export default function ResetPasswordPage() {
   const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(true);
 
-  // Exchange the token_hash from the URL for a session via verifyOtp
+  // Supabase recovery links can arrive as token_hash, code, or URL hash session params
+  // depending on the email template and auth flow configured in the dashboard.
   useEffect(() => {
     if (!isSupabaseConfigured()) {
       setError("Supabase ist nicht konfiguriert.");
@@ -23,12 +45,10 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    const url = new URL(window.location.href);
-    const tokenHash = url.searchParams.get("token_hash");
-    const type = url.searchParams.get("type");
+    const params = getUrlParams();
 
-    if (!tokenHash || type !== "recovery") {
-      setError("Ungültiger oder abgelaufener Link. Bitte fordere einen neuen Link zum Zurücksetzen an.");
+    if (params.error) {
+      setError(params.error);
       setVerifying(false);
       return;
     }
@@ -36,15 +56,33 @@ export default function ResetPasswordPage() {
     async function verify() {
       try {
         const supabase = createClient();
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash!,
-          type: "recovery",
-        });
+        let verifyError: { message?: string } | null = null;
+
+        if (params.code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(params.code);
+          verifyError = error;
+        } else if (params.accessToken && params.refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: params.accessToken,
+            refresh_token: params.refreshToken,
+          });
+          verifyError = error;
+        } else if (params.tokenHash && params.type === "recovery") {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: params.tokenHash,
+            type: "recovery",
+          });
+          verifyError = error;
+        } else {
+          setError("Ungültiger oder abgelaufener Link. Bitte fordere einen neuen Link zum Zurücksetzen an.");
+          return;
+        }
 
         if (verifyError) {
           setError(verifyError.message || "Der Link ist ungültig oder abgelaufen.");
         } else {
           setVerified(true);
+          window.history.replaceState(null, "", "/auth/reset-password");
         }
       } catch {
         setError("Verbindungsfehler. Bitte versuch es später noch einmal.");
