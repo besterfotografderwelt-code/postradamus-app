@@ -90,9 +90,9 @@ export function LandingPage() {
         <div className="landing-hero-copy">
           <h1>Dein persönlicher Instagram‑Agent.</h1>
           <p>
-            Postradamus schreibt deine Captions, plant den Kalender und postet
-            automatisch. Lade einmal deine Bilder hoch – alles Weitere passiert
-            von selbst. Du sparst Stunden und bleibst jeden Tag sichtbar.
+            Postradamus schreibt deine Captions, plant den Kalender und bereitet
+            die Veröffentlichung vor. Du prüfst den Plan und aktivierst das Posten
+            bewusst. So sparst du Stunden und bleibst regelmäßig sichtbar.
           </p>
           <div className="landing-actions">
             <Link className="button landing-primary" href="/login?trial=14">
@@ -127,7 +127,7 @@ export function LandingPage() {
         <div className="landing-section-head">
           <div className="eyebrow">Ablauf</div>
           <h2>Automatisiert in die Zukunft – in vier Schritten.</h2>
-          <p>Postradamus macht deine Social-Media-Planung komplett automatisch.</p>
+          <p>Postradamus macht aus deinen Bildern einen prüfbaren Social-Media-Plan.</p>
         </div>
         <div className="flow-steps">
           {steps.map((step) => (
@@ -171,7 +171,7 @@ export function LandingPage() {
                 <ul className="product-mobile-list">
                   <li><strong>Feed-Posts</strong> mit KI-Captions</li>
                   <li><strong>Carousels</strong> mit Bildauswahl</li>
-                  <li><strong>Stories</strong> automatisch geplant</li>
+                  <li><strong>Stories</strong> serverseitig planbar</li>
                   <li><strong>Hashtags</strong> passend generiert</li>
                   <li><strong>Postingplan</strong> tageweise</li>
                   <li><strong>Direkt veröffentlichen</strong> via Instagram</li>
@@ -221,8 +221,8 @@ export function LandingPage() {
       </section>
 
       <section className="landing-final">
-        <h2>Bereit für automatisiertes Posten?</h2>
-        <p>Starte kostenlos und sieh selbst, wie Postradamus deine Posts automatisch plant.</p>
+        <h2>Bereit für deinen nächsten Postingplan?</h2>
+        <p>Starte kostenlos und sieh selbst, wie Postradamus deine Posts vorbereitet und nach deiner Aktivierung plant.</p>
         <WaitlistForm />
         <p className="helper" style={{ marginTop: 12 }}>
           Oder <Link href="/login?trial=14">direkt ein Konto erstellen</Link>

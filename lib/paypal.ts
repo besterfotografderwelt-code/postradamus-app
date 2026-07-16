@@ -1,15 +1,10 @@
+import { getBillingPlan } from "@/lib/app-config";
+
 const BASE = process.env.PAYPAL_BASE_URL ?? "https://api-m.paypal.com";
 const CLIENT_ID = process.env.PAYPAL_CLIENT_ID ?? "";
 const SECRET = process.env.PAYPAL_CLIENT_SECRET ?? "";
 
-type PlanDef = { name: string; price: number; trial: boolean };
-
-const PLAN_PRICES: Record<string, PlanDef> = {
-  starter: { name: "Starter", price: 29.9, trial: true },
-  growth: { name: "Growth", price: 49.9, trial: true },
-  studio: { name: "Studio", price: 129.9, trial: true },
-  trial: { name: "Trial", price: 29.9, trial: true },
-};
+type PlanDef = { name: string; price: number; trialDays: number };
 
 async function getAccessToken(): Promise<string> {
   const res = await fetch(`${BASE}/v1/oauth2/token`, {
@@ -25,10 +20,10 @@ async function getAccessToken(): Promise<string> {
 }
 
 function buildBillingCycles(plan: PlanDef) {
-  if (plan.trial) {
+  if (plan.trialDays > 0) {
     return [
       {
-        frequency: { interval_unit: "DAY" as const, interval_count: 14 },
+        frequency: { interval_unit: "DAY" as const, interval_count: plan.trialDays },
         tenure_type: "TRIAL" as const,
         sequence: 1,
         total_cycles: 1,
@@ -54,8 +49,8 @@ function buildBillingCycles(plan: PlanDef) {
 }
 
 export async function createSubscription(planId: string, returnUrl: string, cancelUrl: string) {
-  const plan = PLAN_PRICES[planId];
-  if (!plan) throw new Error("Unbekanntes Paket");
+  const billingPlan = getBillingPlan(planId);
+  const plan = { name: billingPlan.name, price: billingPlan.price, trialDays: billingPlan.trialDays };
 
   const token = await getAccessToken();
 
@@ -78,7 +73,7 @@ export async function createSubscription(planId: string, returnUrl: string, canc
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       product_id: product.id,
-      name: `Postradamus ${plan.name}` + (plan.trial ? " (14 Tage gratis)" : ""),
+      name: `Postradamus ${plan.name}` + (plan.trialDays > 0 ? " (14 Tage gratis)" : ""),
       status: "ACTIVE",
       billing_cycles,
       payment_preferences: {
@@ -87,14 +82,14 @@ export async function createSubscription(planId: string, returnUrl: string, canc
       },
     }),
   });
-  const billingPlan = await planRes.json();
+  const createdBillingPlan = await planRes.json();
 
   // Create subscription
   const subRes = await fetch(`${BASE}/v1/billing/subscriptions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      plan_id: billingPlan.id,
+      plan_id: createdBillingPlan.id,
       application_context: {
         return_url: returnUrl,
         cancel_url: cancelUrl,

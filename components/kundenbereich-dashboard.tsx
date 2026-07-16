@@ -2,32 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BILLING_PLANS, getBillingPlan } from "@/lib/app-config";
 
-const IG_CREDS_KEY = "weddin…m.v1";
+const IG_CREDS_KEY = "weddingflow.instagram.v1";
 const INSTAGRAM_CLIENT_ID = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID;
-
-/* ── Demo-Daten (später via API/Supabase) ── */
-const DEMO_USER = {
-  name: "Max Mustermann",
-  email: "max@example.com",
-  plan: "Growth",
-  planPrice: "49,90 €",
-  nextBilling: "15.07.2026",
-  quotaUsed: 47,
-  quotaTotal: 150,
-};
-
-const DEMO_INVOICES = [
-  { id: "INV-2026-06", date: "01.06.2026", amount: "49,90 €", status: "Bezahlt" },
-  { id: "INV-2026-05", date: "01.05.2026", amount: "49,90 €", status: "Bezahlt" },
-  { id: "INV-2026-04", date: "01.04.2026", amount: "24,90 €", status: "Bezahlt" },
-  { id: "INV-2026-03", date: "01.03.2026", amount: "24,90 €", status: "Bezahlt" },
-];
+const INSTAGRAM_GRAPH_API_VERSION = process.env.NEXT_PUBLIC_INSTAGRAM_GRAPH_API_VERSION || "v25.0";
 
 const PLANS = [
-  { name: "Starter", price: "24,90 €", quota: "75 Bilder/Monat" },
-  { name: "Growth", price: "49,90 €", quota: "150 Bilder/Monat", current: true },
-  { name: "Studio", price: "129,90 €", quota: "Unlimited (Fair-Use)" },
+  { id: "starter", name: "Starter", price: "24,90 €", quota: "75 Bilder/Monat" },
+  { id: "growth", name: "Growth", price: "49,90 €", quota: "150 Bilder/Monat" },
+  { id: "studio", name: "Studio", price: "129,90 €", quota: "Unlimited (Fair-Use)" },
 ];
 
 /* ── Sub-Views ── */
@@ -55,10 +39,15 @@ export function KundenbereichDashboard() {
   /* Projects */
   const [projects, setProjects] = useState<Array<{ id: string; couple_name: string | null; business_type: string; location: string | null; uploaded_image_count: number; status: string }>>([]);
   const [profile, setProfile] = useState<{ full_name: string; plan: string; trial_start: string | null; trial_end: string | null } | null>(null);
+  const [monthlyImageCount, setMonthlyImageCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
   /* Auth check */
   const [authed, setAuthed] = useState<boolean | null>(false);
+  const activePlan = getBillingPlan(profile?.plan === "trial" ? "starter" : profile?.plan);
+  const quotaPercent = activePlan.monthlyImageLimit === null
+    ? 100
+    : Math.min(100, (monthlyImageCount / activePlan.monthlyImageLimit) * 100);
 
   useEffect(() => {
     // Check for ?view=password-reset from login page
@@ -74,6 +63,7 @@ export function KundenbereichDashboard() {
         if (data === null) return;
         setProjects(data?.projects ?? []);
         setProfile(data?.profile ?? null);
+        setMonthlyImageCount(data?.monthlyImageCount ?? 0);
         setAuthed(true);
         setLoaded(true);
       })
@@ -109,7 +99,7 @@ export function KundenbereichDashboard() {
       return;
     }
     const redirectUri = `${window.location.origin}/auth/instagram/callback`;
-    window.location.href = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=instagram_basic,instagram_content_publish&response_type=code`;
+    window.location.href = `https://www.facebook.com/${INSTAGRAM_GRAPH_API_VERSION}/dialog/oauth?client_id=${INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=instagram_basic,instagram_content_publish&response_type=code`;
   }
 
   function disconnectInstagram() {
@@ -240,7 +230,7 @@ export function KundenbereichDashboard() {
                 required
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-                placeholder={DEMO_USER.email}
+                placeholder="name@example.com"
                 autoComplete="email"
               />
             </label>
@@ -343,14 +333,14 @@ export function KundenbereichDashboard() {
         <div className="kunden-card-main">
           <div>
             <span className="kunden-meta">Aktuelles Paket</span>
-            <strong className="kunden-plan">{profile?.plan === "trial" && profile?.trial_end && new Date(profile.trial_end) > new Date() ? "14-Tage-Trial" : profile?.plan || "-"}</strong>
+            <strong className="kunden-plan">{profile?.plan === "trial" && profile?.trial_end && new Date(profile.trial_end) > new Date() ? "14-Tage-Trial" : activePlan.name}</strong>
             <span className="kunden-meta">
               {profile?.trial_end && new Date(profile.trial_end) > new Date()
                 ? `Trial bis ${new Date(profile.trial_end).toLocaleDateString("de")}`
                 : "Aktives Paket"}
             </span>
           </div>
-          {profile?.plan === "studio" ? (
+          {activePlan.monthlyImageLimit === null ? (
             <div className="kunden-quota">
               <div className="kunden-quota-bar">
                 <div className="kunden-quota-fill" style={{ width: "100%", background: "var(--good)" }} />
@@ -360,9 +350,9 @@ export function KundenbereichDashboard() {
           ) : (
             <div className="kunden-quota">
               <div className="kunden-quota-bar">
-                <div className="kunden-quota-fill" style={{ width: `${Math.min(100, (projects.length / 50) * 100)}%` }} />
+                <div className="kunden-quota-fill" style={{ width: `${quotaPercent}%` }} />
               </div>
-              <span className="kunden-meta">{projects.length} Projekte</span>
+              <span className="kunden-meta">{monthlyImageCount}/{activePlan.monthlyImageLimit} Bilder diesen Monat</span>
             </div>
           )}
         </div>
@@ -390,21 +380,21 @@ export function KundenbereichDashboard() {
           {PLANS.map((plan) => (
             <div
               key={plan.name}
-              className={`plan-switch-card ${plan.current ? "plan-switch-current" : ""}`}
+              className={`plan-switch-card ${activePlan.id === plan.id ? "plan-switch-current" : ""}`}
             >
               <h3>{plan.name}</h3>
               <strong className="plan-switch-price">{plan.price}</strong>
               <span className="kunden-meta">{plan.quota}</span>
-              {plan.current ? (
+              {activePlan.id === plan.id ? (
                 <span className="plan-badge-current">Aktuell</span>
               ) : (
                 <button
                   className="button-secondary"
                   type="button"
                   style={{ marginTop: 8 }}
-                  onClick={() => handlePlanChange(plan.name.toLowerCase())}
+                  onClick={() => handlePlanChange(plan.id)}
                 >
-                  {PLANS.findIndex((p) => p.current) < PLANS.findIndex((p) => p.name === plan.name)
+                  {Object.keys(BILLING_PLANS).indexOf(activePlan.id) < Object.keys(BILLING_PLANS).indexOf(plan.id)
                     ? "Upgraden"
                     : "Downgraden"}
                 </button>
@@ -418,28 +408,11 @@ export function KundenbereichDashboard() {
       <section className="kunden-section">
         <h2>Rechnungen</h2>
         <p className="kunden-section-desc">
-          Deine Rechnungen der letzten Monate zum Herunterladen.
+          Rechnungen werden über das Zahlungsportal bereitgestellt.
         </p>
-        <div className="invoice-table">
-          <div className="invoice-row invoice-head">
-            <span>Rechnung</span>
-            <span>Datum</span>
-            <span>Betrag</span>
-            <span>Status</span>
-            <span />
-          </div>
-          {DEMO_INVOICES.map((inv) => (
-            <div key={inv.id} className="invoice-row">
-              <span className="invoice-id">{inv.id}</span>
-              <span className="kunden-meta">{inv.date}</span>
-              <span>{inv.amount}</span>
-              <span className="invoice-status">{inv.status}</span>
-              <button className="button-secondary invoice-dl" type="button" style={{ fontSize: ".8rem", padding: "4px 12px" }}>
-                PDF
-              </button>
-            </div>
-          ))}
-        </div>
+        <button className="button-secondary" onClick={handleCancelSubscription} type="button">
+          Zahlungsportal öffnen
+        </button>
       </section>
 
       {/* ── Passwort ändern ── */}

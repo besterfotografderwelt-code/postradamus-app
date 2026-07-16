@@ -4,35 +4,42 @@
 import { Client } from "basic-ftp";
 import { Readable } from "stream";
 
-const FTP_CONFIG = {
-  host: "ftp.world4you.com",
-  user: "ftp6796787",
-  password: "Amy040312!?",
-  remoteDir: "/img/weddingflow"
-};
+function getFtpConfig() {
+  const host = process.env.INSTAGRAM_MEDIA_FTP_HOST || process.env.FTP_HOST;
+  const user = process.env.INSTAGRAM_MEDIA_FTP_USER || process.env.FTP_USER;
+  const password = process.env.INSTAGRAM_MEDIA_FTP_PASSWORD || process.env.FTP_PASSWORD;
+  const remoteDir = process.env.INSTAGRAM_MEDIA_FTP_REMOTE_DIR || process.env.FTP_REMOTE_DIR || "/img/weddingflow";
+  const publicBaseUrl = process.env.INSTAGRAM_MEDIA_PUBLIC_BASE_URL || "https://bilder.besterfotografderwelt.com/weddingflow";
+
+  if (!host || !user || !password) {
+    throw new Error("FTP-Zugangsdaten fehlen. Bitte INSTAGRAM_MEDIA_FTP_HOST, INSTAGRAM_MEDIA_FTP_USER und INSTAGRAM_MEDIA_FTP_PASSWORD konfigurieren.");
+  }
+
+  return { host, user, password, remoteDir, publicBaseUrl };
+}
 
 export async function uploadToWebspace(
   buffer: Buffer,
   filename: string
 ): Promise<string> {
   const client = new Client();
+  const config = getFtpConfig();
 
   try {
     await client.access({
-      host: FTP_CONFIG.host,
-      user: FTP_CONFIG.user,
-      password: FTP_CONFIG.password,
+      host: config.host,
+      user: config.user,
+      password: config.password,
       secure: false
     });
 
-    await client.ensureDir(FTP_CONFIG.remoteDir);
+    await client.ensureDir(config.remoteDir);
     const stream = Readable.from(buffer);
     await client.uploadFrom(stream, filename);
 
     client.close();
 
-    // Construct public URL
-    return `https://bilder.besterfotografderwelt.com/weddingflow/${filename}`;
+    return `${config.publicBaseUrl.replace(/\/$/, "")}/${filename}`;
   } catch (error) {
     client.close();
     throw error;
@@ -41,14 +48,15 @@ export async function uploadToWebspace(
 
 export async function deleteFromWebspace(filename: string): Promise<void> {
   const client = new Client();
+  const config = getFtpConfig();
   try {
     await client.access({
-      host: FTP_CONFIG.host,
-      user: FTP_CONFIG.user,
-      password: FTP_CONFIG.password,
+      host: config.host,
+      user: config.user,
+      password: config.password,
       secure: false
     });
-    await client.remove(`${FTP_CONFIG.remoteDir}/${filename}`);
+    await client.remove(`${config.remoteDir}/${filename}`);
     client.close();
   } catch {
     client.close();

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 const IG_CREDS_KEY = "weddingflow.instagram.v1";
 const INSTAGRAM_CLIENT_ID = process.env.NEXT_PUBLIC_INSTAGRAM_CLIENT_ID;
+const INSTAGRAM_GRAPH_API_VERSION = process.env.NEXT_PUBLIC_INSTAGRAM_GRAPH_API_VERSION || "v25.0";
 
 type InstagramConfig = {
   accessToken: string;
@@ -37,7 +38,7 @@ export default function SettingsPage() {
       return;
     }
     const redirectUri = `${window.location.origin}/auth/instagram/callback`;
-    window.location.href = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=instagram_basic,instagram_content_publish&response_type=code`;
+    window.location.href = `https://www.facebook.com/${INSTAGRAM_GRAPH_API_VERSION}/dialog/oauth?client_id=${INSTAGRAM_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=instagram_basic,instagram_content_publish&response_type=code`;
   }
 
   function disconnect() {

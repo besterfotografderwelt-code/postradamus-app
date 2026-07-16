@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "postradamus2026";
-
 function checkToken(request: Request) {
+  const adminToken = process.env.ADMIN_TOKEN;
+  if (!adminToken) {
+    return NextResponse.json({ error: "ADMIN_TOKEN ist nicht konfiguriert." }, { status: 500 });
+  }
+
   const token = request.headers.get("x-admin-token") ?? "";
-  if (token !== ADMIN_TOKEN) {
+  if (token !== adminToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return null;

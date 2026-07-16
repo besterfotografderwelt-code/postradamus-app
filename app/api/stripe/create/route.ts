@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
+import { getBillingPlan } from "@/lib/app-config";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "");
-
-const PLAN_PRICES: Record<string, { name: string; price: number }> = {
-  starter: { name: "Starter", price: 29.9 },
-  growth: { name: "Growth", price: 49.9 },
-  studio: { name: "Studio", price: 129.9 },
-  trial: { name: "Starter (Trial)", price: 29.9 },
-};
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -19,14 +13,14 @@ export async function POST(request: Request) {
   }
 
   const { plan, returnUrl, cancelUrl } = await request.json();
-  const planDef = PLAN_PRICES[plan] ?? PLAN_PRICES.starter;
+  const planDef = getBillingPlan(plan);
   const isTrial = plan === "trial";
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       client_reference_id: auth.user.id,
-      metadata: { plan: planDef.name.toLowerCase(), userId: auth.user.id },
+      metadata: { plan: planDef.id === "trial" ? "starter" : planDef.id, userId: auth.user.id },
       line_items: [
         {
           price_data: {
@@ -38,9 +32,10 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      ...(isTrial && {
-        subscription_data: { trial_period_days: 14 },
-      }),
+      subscription_data: {
+        metadata: { plan: planDef.id === "trial" ? "starter" : planDef.id, userId: auth.user.id },
+        ...(isTrial && { trial_period_days: planDef.trialDays })
+      },
       success_url: returnUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,

@@ -23,10 +23,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  // Try to extract userId from client_reference_id on the event object
-  const obj = event.data.object as { client_reference_id?: string } | null;
-  const userId = obj?.client_reference_id;
-
   // checkout.session.completed → user completed payment / started subscription
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
@@ -38,8 +34,8 @@ export async function POST(request: Request) {
         .from("profiles")
         .update({
           plan: planName,
-          trial_start: new Date().toISOString(),
-          trial_end: new Date(Date.now() + 14 * 86400000).toISOString(),
+          trial_start: session.subscription ? new Date().toISOString() : null,
+          trial_end: session.subscription ? new Date(Date.now() + 14 * 86400000).toISOString() : null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", uid);
@@ -47,8 +43,10 @@ export async function POST(request: Request) {
   }
 
   // customer.subscription.updated → plan change or renewal
-  if (event.type === "customer.subscription.updated" && userId) {
+  if (event.type === "customer.subscription.updated") {
     const subscription = event.data.object as Stripe.Subscription;
+    const userId = subscription.metadata?.userId;
+    if (!userId) return NextResponse.json({ received: true });
     const planName =
       (subscription.metadata?.plan as string) ||
       subscription.items.data[0]?.price?.nickname ||
@@ -66,7 +64,10 @@ export async function POST(request: Request) {
   }
 
   // customer.subscription.deleted → subscription cancelled
-  if (event.type === "customer.subscription.deleted" && userId) {
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object as Stripe.Subscription;
+    const userId = subscription.metadata?.userId;
+    if (!userId) return NextResponse.json({ received: true });
     await supabaseAdmin
       .from("profiles")
       .update({

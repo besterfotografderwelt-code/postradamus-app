@@ -1,15 +1,29 @@
 import { NextResponse } from "next/server";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { graphApiUrl } from "@/lib/app-config";
+
+function loadServerToken() {
+  try {
+    const tokenPath = join(process.cwd(), "data", "instagram-token.json");
+    if (!existsSync(tokenPath)) return "";
+    const data = JSON.parse(readFileSync(tokenPath, "utf8")) as { accessToken?: string };
+    return data.accessToken?.trim() ?? "";
+  } catch {
+    return "";
+  }
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { accessToken?: string; autoRefresh?: boolean };
-    const token = body.accessToken?.trim();
+    const token = body.accessToken?.trim() || loadServerToken();
     if (!token) {
       return NextResponse.json({ valid: false, message: "Kein Token vorhanden.", action: "reconnect" });
     }
 
     // Check token validity
-    const url = new URL("https://graph.facebook.com/v18.0/me/accounts");
+    const url = new URL(graphApiUrl("/me/accounts"));
     url.searchParams.set("access_token", token);
 
     const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10000) });

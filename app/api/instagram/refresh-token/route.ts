@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { graphApiUrl } from "@/lib/app-config";
 
 /**
  * Refreshes a long-lived Instagram access token.
@@ -10,7 +11,11 @@ import { join } from "node:path";
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { accessToken?: string };
-    const token = body.accessToken?.trim();
+    const fallbackTokenPath = join(process.cwd(), "data", "instagram-token.json");
+    const fallbackToken = existsSync(fallbackTokenPath)
+      ? (JSON.parse(readFileSync(fallbackTokenPath, "utf8")) as { accessToken?: string }).accessToken?.trim()
+      : "";
+    const token = body.accessToken?.trim() || fallbackToken;
     if (!token) {
       return NextResponse.json({ error: "Kein Token vorhanden." }, { status: 400 });
     }
@@ -19,7 +24,7 @@ export async function POST(request: Request) {
     const clientSecret = process.env.INSTAGRAM_CLIENT_SECRET || "";
 
     // Refresh the long-lived token
-    const url = new URL("https://graph.facebook.com/v18.0/oauth/access_token");
+    const url = new URL(graphApiUrl("/oauth/access_token"));
     url.searchParams.set("grant_type", "fb_exchange_token");
     url.searchParams.set("client_id", clientId);
     url.searchParams.set("client_secret", clientSecret);

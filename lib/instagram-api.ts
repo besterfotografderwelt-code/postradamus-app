@@ -1,3 +1,5 @@
+import { graphApiUrl } from "@/lib/app-config";
+
 // Instagram Graph API posting for WeddingFlow
 // Posts directly to Instagram Business/Creator accounts
 
@@ -8,7 +10,7 @@ async function publishContainer(params: {
   accessToken: string;
   instagramAccountId: string;
 }): Promise<InstagramPostResult> {
-  const publishUrl = new URL(`https://graph.facebook.com/v18.0/${params.instagramAccountId}/media_publish`);
+  const publishUrl = new URL(graphApiUrl(`/${params.instagramAccountId}/media_publish`));
   publishUrl.searchParams.set("creation_id", params.containerId);
   publishUrl.searchParams.set("access_token", params.accessToken);
 
@@ -32,7 +34,7 @@ async function waitForContainer(params: {
   const delayMs = params.delayMs ?? 5000;
 
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const statusUrl = new URL(`https://graph.facebook.com/v18.0/${params.containerId}`);
+    const statusUrl = new URL(graphApiUrl(`/${params.containerId}`));
     statusUrl.searchParams.set("fields", "status_code");
     statusUrl.searchParams.set("access_token", params.accessToken);
 
@@ -67,7 +69,7 @@ export async function postToInstagram(params: {
 }): Promise<InstagramPostResult> {
   try {
     // Step 1: Create media container
-    const createUrl = new URL(`https://graph.facebook.com/v18.0/${params.instagramAccountId}/media`);
+    const createUrl = new URL(graphApiUrl(`/${params.instagramAccountId}/media`));
     createUrl.searchParams.set("image_url", params.imageUrl);
     createUrl.searchParams.set("caption", params.caption);
     createUrl.searchParams.set("access_token", params.accessToken);
@@ -111,7 +113,7 @@ export async function postCarouselToInstagram(params: {
     // Create containers for each image
     const containerIds: string[] = [];
     for (const imageUrl of params.imageUrls) {
-      const url = new URL(`https://graph.facebook.com/v18.0/${params.instagramAccountId}/media`);
+      const url = new URL(graphApiUrl(`/${params.instagramAccountId}/media`));
       url.searchParams.set("image_url", imageUrl);
       url.searchParams.set("is_carousel_item", "true");
       url.searchParams.set("access_token", params.accessToken);
@@ -125,7 +127,7 @@ export async function postCarouselToInstagram(params: {
     }
 
     // Create carousel container
-    const carouselUrl = new URL(`https://graph.facebook.com/v18.0/${params.instagramAccountId}/media`);
+    const carouselUrl = new URL(graphApiUrl(`/${params.instagramAccountId}/media`));
     carouselUrl.searchParams.set("media_type", "CAROUSEL");
     carouselUrl.searchParams.set("caption", params.caption);
     carouselUrl.searchParams.set("children", containerIds.join(","));
@@ -154,7 +156,7 @@ export async function postStoryToInstagram(params: {
   instagramAccountId: string;
 }): Promise<InstagramPostResult> {
   try {
-    const createUrl = new URL(`https://graph.facebook.com/v18.0/${params.instagramAccountId}/media`);
+    const createUrl = new URL(graphApiUrl(`/${params.instagramAccountId}/media`));
     createUrl.searchParams.set("media_type", "STORIES");
     createUrl.searchParams.set(params.mediaKind === "video" ? "video_url" : "image_url", params.mediaUrl);
     createUrl.searchParams.set("access_token", params.accessToken);
@@ -189,7 +191,7 @@ export async function postReelToInstagram(params: {
   shareToFeed?: boolean;
 }): Promise<InstagramPostResult> {
   try {
-    const createUrl = new URL(`https://graph.facebook.com/v18.0/${params.instagramAccountId}/media`);
+    const createUrl = new URL(graphApiUrl(`/${params.instagramAccountId}/media`));
     createUrl.searchParams.set("media_type", "REELS");
     createUrl.searchParams.set("video_url", params.videoUrl);
     createUrl.searchParams.set("caption", params.caption);

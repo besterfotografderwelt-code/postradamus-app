@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import sharp from "sharp";
 import { uploadToWebspace, deleteFromWebspace } from "@/lib/ftp-upload";
+import { fetchImageUrl, getExtension, isFile, parseCropPosition, prepareInstagramImage } from "@/lib/instagram-media";
 import { postCarouselToInstagram, postReelToInstagram, postStoryToInstagram, postToInstagram } from "@/lib/instagram-api";
 
 type PostRequestBody = {
@@ -25,102 +25,8 @@ function chunk<T>(items: T[], size: number): T[][] {
   return batches;
 }
 
-function isFile(value: FormDataEntryValue | undefined): value is File {
-  return value instanceof File;
-}
-
-function getExtension(file: File) {
-  const original = file.name.split(".").pop()?.toLowerCase();
-  if (original && /^[a-z0-9]{2,5}$/.test(original)) return original;
-  if (file.type === "video/mp4") return "mp4";
-  if (file.type === "video/quicktime") return "mov";
-  if (file.type === "image/png") return "png";
-  return "jpg";
-}
-
-const imageFormats: Record<Exclude<NonNullable<PostRequestBody["postType"]>, "reel">, { width: number; height: number; label: string }> = {
-  feed: { width: 1080, height: 1350, label: "feed-4x5" },
-  carousel: { width: 1080, height: 1350, label: "carousel-4x5" },
-  story: { width: 1080, height: 1920, label: "story-9x16" }
-};
-
-function getTargetImageFormat(postType: PostRequestBody["postType"]) {
-  if (postType === "story") return imageFormats.story;
-  if (postType === "carousel") return imageFormats.carousel;
-  return imageFormats.feed;
-}
-
-function clampCropPercent(value: unknown) {
-  const numeric = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(numeric)) return 50;
-  return Math.max(0, Math.min(100, numeric));
-}
-
-function parseCropPosition(form: FormData): { x: number; y: number } {
-  return {
-    x: clampCropPercent(form.get("cropX")),
-    y: clampCropPercent(form.get("cropY"))
-  };
-}
-
-function calculateCoverCrop(source: { width: number; height: number }, target: { width: number; height: number }, cropPosition: { x: number; y: number }) {
-  const sourceRatio = source.width / source.height;
-  const targetRatio = target.width / target.height;
-
-  if (sourceRatio > targetRatio) {
-    const width = Math.max(1, Math.round(source.height * targetRatio));
-    const left = Math.round((source.width - width) * (cropPosition.x / 100));
-    return {
-      left: Math.max(0, Math.min(source.width - width, left)),
-      top: 0,
-      width,
-      height: source.height
-    };
-  }
-
-  const height = Math.max(1, Math.round(source.width / targetRatio));
-  const top = Math.round((source.height - height) * (cropPosition.y / 100));
-  return {
-    left: 0,
-    top: Math.max(0, Math.min(source.height - height, top)),
-    width: source.width,
-    height
-  };
-}
-
-async function prepareInstagramImage(buffer: Buffer, postType: PostRequestBody["postType"], cropPosition = { x: 50, y: 50 }) {
-  const format = getTargetImageFormat(postType);
-  const normalized = await sharp(buffer, { failOn: "none" })
-    .rotate()
-    .flatten({ background: "#ffffff" })
-    .toBuffer({ resolveWithObject: true });
-
-  const sourceWidth = normalized.info.width;
-  const sourceHeight = normalized.info.height;
-  const crop = calculateCoverCrop(
-    { width: sourceWidth, height: sourceHeight },
-    { width: format.width, height: format.height },
-    cropPosition
-  );
-
-  const output = await sharp(normalized.data)
-    .extract(crop)
-    .resize(format.width, format.height, { fit: "fill" })
-    .jpeg({
-      quality: 92,
-      mozjpeg: true
-    })
-    .toBuffer();
-
-  return { buffer: output, format };
-}
-
-async function fetchImageUrl(url: string) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Bild konnte nicht geladen werden: ${url}`);
-  }
-  return Buffer.from(await response.arrayBuffer());
+async function cleanupUploadedFiles(filenames: string[]) {
+  await Promise.all(filenames.map((filename) => deleteFromWebspace(filename).catch(() => {})));
 }
 
 function loadServerInstagramConfig() {
@@ -268,6 +174,8 @@ export async function POST(request: Request) {
         if (!result.success) throw new Error(result.error);
         mediaIds.push(result.mediaId);
       }
+      await cleanupUploadedFiles(uploadedFiles);
+      uploadedFiles.length = 0;
       return NextResponse.json({ mediaIds, postedCount: mediaIds.length, postBatches: mediaIds.length });
     }
 
@@ -279,6 +187,8 @@ export async function POST(request: Request) {
         instagramAccountId
       });
       if (!result.success) throw new Error(result.error);
+      await cleanupUploadedFiles(uploadedFiles);
+      uploadedFiles.length = 0;
       return NextResponse.json({ mediaIds: [result.mediaId], postedCount: 1, postBatches: 1 });
     }
 
@@ -319,15 +229,16 @@ export async function POST(request: Request) {
       mediaIds.push(result.mediaId);
     }
 
+    await cleanupUploadedFiles(uploadedFiles);
+    uploadedFiles.length = 0;
+
     return NextResponse.json({
       mediaIds,
       postedCount: publicUrls.length,
       postBatches: batches.length
     });
   } catch (error) {
-    for (const filename of uploadedFiles) {
-      await deleteFromWebspace(filename).catch(() => {});
-    }
+    await cleanupUploadedFiles(uploadedFiles);
 
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Fehler." },

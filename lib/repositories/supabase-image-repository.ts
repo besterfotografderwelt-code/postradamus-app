@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { ProjectImage, ProjectImageTag } from "@/lib/types";
 import type { ImageRepository } from "@/lib/repositories/image-repository";
+import { getBillingPlan } from "@/lib/app-config";
 
 type ImageRow = Database["public"]["Tables"]["project_images"]["Row"];
 
@@ -104,6 +105,26 @@ export class SupabaseImageRepository implements ImageRepository {
 
     if (authError) throw authError;
     if (!user) throw new Error("Zum Hochladen von Bildern ist eine Anmeldung erforderlich.");
+
+    const [{ data: profile }, { count, error: countError }] = await Promise.all([
+      this.client
+        .from("profiles")
+        .select("plan")
+        .eq("id", user.id)
+        .single(),
+      this.client
+        .from("project_images")
+        .select("id, projects!inner(profile_id)", { count: "exact", head: true })
+        .eq("projects.profile_id", user.id)
+        .gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+    ]);
+
+    if (countError) throw countError;
+
+    const plan = getBillingPlan(profile?.plan);
+    if (plan.monthlyImageLimit !== null && (count ?? 0) + files.length > plan.monthlyImageLimit) {
+      throw new Error(`Dein ${plan.name}-Paket erlaubt ${plan.monthlyImageLimit} Bilder pro Monat. Bitte weniger Bilder hochladen oder Paket wechseln.`);
+    }
 
     const { data: lastImage, error: sortError } = await this.client
       .from("project_images")

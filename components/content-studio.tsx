@@ -32,12 +32,6 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
   const [plannedPosts, setPlannedPosts] = useState<PlannedPost[]>([]);
   const firstGen = useRef(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const automationTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const clearAutomationTimers = useCallback(() => {
-    automationTimers.current.forEach((timer) => clearTimeout(timer));
-    automationTimers.current = [];
-  }, []);
 
   useEffect(() => {
     let c = false;
@@ -60,8 +54,6 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
       if (saveTimeout.current) clearTimeout(saveTimeout.current);
     };
   }, [draft, output, project.id]);
-
-  useEffect(() => clearAutomationTimers, [clearAutomationTimers]);
 
   const generateContent = useCallback(async (selectedTone = tone) => {
     setIsGenerating(true); setMessage("");
@@ -100,7 +92,7 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
   }
 
 
-  async function publishPlannedPost(post: PlannedPost, config?: { accessToken: string; accountId: string }) {
+  async function publishPlannedPost(post: PlannedPost, config?: { accessToken: string; accountId: string }, mode: "now" | "schedule" = "now") {
     const captionParts = [
       post.caption.trim(),
       post.mentions.length > 0 ? post.mentions.join(" ") : "",
@@ -137,10 +129,15 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
     form.append("cropY", String(post.cropPosition.y));
     if (config?.accessToken) form.append("accessToken", config.accessToken);
     if (config?.accountId) form.append("instagramAccountId", config.accountId);
+    if (mode === "schedule") {
+      form.append("scheduledAt", post.scheduledAt);
+      form.append("projectId", project.id);
+      form.append("plannedPostId", post.id);
+    }
 
-    const res = await fetch("/api/instagram/post", { method: "POST", body: form });
+    const res = await fetch(mode === "schedule" ? "/api/instagram/schedule" : "/api/instagram/post", { method: "POST", body: form });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Instagram-Post fehlgeschlagen.");
+    if (!res.ok) throw new Error(data.error || (mode === "schedule" ? "Instagram-Planung fehlgeschlagen." : "Instagram-Post fehlgeschlagen."));
     return data as { postedCount?: number; mediaIds?: string[] };
   }
 
@@ -162,8 +159,6 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
         return;
       }
 
-      clearAutomationTimers();
-
       const now = Date.now();
       const duePosts = publishablePosts.filter((post) => new Date(post.scheduledAt).getTime() <= now);
       const futurePosts = publishablePosts.filter((post) => new Date(post.scheduledAt).getTime() > now);
@@ -175,15 +170,9 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
         postedIds.add(post.id);
       }
 
-      futurePosts.forEach((post) => {
-        const delay = Math.max(0, new Date(post.scheduledAt).getTime() - Date.now());
-        const timer = setTimeout(() => {
-          void publishPlannedPost(post, clientConfig).catch((error) => {
-            setPostResult(`❌ Geplanter Post fehlgeschlagen: ${error instanceof Error ? error.message : "Unbekannter Fehler."}`);
-          });
-        }, delay);
-        automationTimers.current.push(timer);
-      });
+      for (const post of futurePosts) {
+        await publishPlannedPost(post, clientConfig, "schedule");
+      }
 
       localStorage.setItem(`weddingflow.posting-plan.${project.id}`, JSON.stringify({
         startedAt: new Date().toISOString(),
@@ -192,7 +181,7 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
       }));
 
       const postedInfo = postedIds.size > 0 ? `${postedIds.size} fällige Posts veröffentlicht. ` : "";
-      const scheduledInfo = futurePosts.length > 0 ? `${futurePosts.length} weitere Posts sind nach Plan getaktet.` : "Keine weiteren Posts offen.";
+      const scheduledInfo = futurePosts.length > 0 ? `${futurePosts.length} weitere Posts sind serverseitig geplant.` : "Keine weiteren Posts offen.";
       const unsupportedInfo = unsupportedCount > 0 ? ` ${unsupportedCount} Reel-Slots bleiben vorbereitet – lade ein Video hoch, um sie zu posten.` : "";
       setPostResult(`🎉 Posting-Plan gestartet. ${postedInfo}${scheduledInfo}${unsupportedInfo}`);
 

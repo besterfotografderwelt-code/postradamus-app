@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { graphApiUrl } from "@/lib/app-config";
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     // Exchange code for short-lived access token
-    const tokenUrl = new URL("https://graph.facebook.com/v18.0/oauth/access_token");
+    const tokenUrl = new URL(graphApiUrl("/oauth/access_token"));
     tokenUrl.searchParams.set("client_id", clientId);
     tokenUrl.searchParams.set("client_secret", clientSecret);
     tokenUrl.searchParams.set("redirect_uri", redirectUri);
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     const shortLivedToken = tokenData.access_token;
 
     // Exchange for long-lived token (60 days)
-    const llUrl = new URL("https://graph.facebook.com/v18.0/oauth/access_token");
+    const llUrl = new URL(graphApiUrl("/oauth/access_token"));
     llUrl.searchParams.set("grant_type", "fb_exchange_token");
     llUrl.searchParams.set("client_id", clientId);
     llUrl.searchParams.set("client_secret", clientSecret);
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
     let accountId = "";
     let username = "";
     try {
-      const accountsUrl = new URL("https://graph.facebook.com/v18.0/me/accounts");
+      const accountsUrl = new URL(graphApiUrl("/me/accounts"));
       accountsUrl.searchParams.set("access_token", accessToken);
       const accountsRes = await fetch(accountsUrl.toString(), { signal: AbortSignal.timeout(10000) });
       const accountsData = await accountsRes.json();
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
         const pageToken = accountsData.data[0].access_token;
 
         // Get Instagram Business Account connected to this page
-        const igUrl = new URL(`https://graph.facebook.com/v18.0/${pageId}`);
+        const igUrl = new URL(graphApiUrl(`/${pageId}`));
         igUrl.searchParams.set("fields", "instagram_business_account");
         igUrl.searchParams.set("access_token", pageToken);
         const igRes = await fetch(igUrl.toString(), { signal: AbortSignal.timeout(10000) });
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
           accountId = igData.instagram_business_account.id;
 
           // Get username
-          const userUrl = new URL(`https://graph.facebook.com/v18.0/${accountId}`);
+          const userUrl = new URL(graphApiUrl(`/${accountId}`));
           userUrl.searchParams.set("fields", "username");
           userUrl.searchParams.set("access_token", accessToken);
           const userRes = await fetch(userUrl.toString(), { signal: AbortSignal.timeout(10000) });
@@ -109,7 +110,7 @@ export async function POST(request: Request) {
 
     if (!accountId) {
       try {
-        const debugUrl = new URL("https://graph.facebook.com/v18.0/debug_token");
+        const debugUrl = new URL(graphApiUrl("/debug_token"));
         debugUrl.searchParams.set("input_token", accessToken);
         debugUrl.searchParams.set("access_token", accessToken);
         const debugRes = await fetch(debugUrl.toString(), { signal: AbortSignal.timeout(10000) });
@@ -150,7 +151,7 @@ export async function POST(request: Request) {
       }));
     } catch { /* non-critical */ }
 
-    return NextResponse.json({ accessToken, accountId, username });
+    return NextResponse.json({ connected: true, accountId, username });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Auth fehlgeschlagen." },

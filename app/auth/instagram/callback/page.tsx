@@ -31,10 +31,9 @@ function InstagramCallbackContent() {
     })
       .then(async (res) => {
         const data = await res.json();
-        if (res.ok && data.accessToken) {
-          // Store token in localStorage
+        if (res.ok && data.connected) {
           const config = {
-            accessToken: data.accessToken,
+            accessToken: "",
             accountId: data.accountId || "",
             username: data.username || ""
           };
