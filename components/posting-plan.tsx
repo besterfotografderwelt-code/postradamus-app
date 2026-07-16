@@ -9,6 +9,7 @@ export type PlannedPost = {
   scheduledAt: string;
   type: "single" | "carousel" | "reel" | "story";
   images: ProjectImage[];
+  cropPosition: { x: number; y: number };
   videoId?: string;
   videoName?: string;
   caption: string;
@@ -679,6 +680,7 @@ export function PostingPlan({ images, videos, tone = "", businessType = "sonstig
         scheduledAt: buildScheduledAt(baseDate, slot.dayOffset, slot.time),
         type: slot.type,
         images: effectiveImages,
+        cropPosition: cropPositions[slot.id] ?? { x: 50, y: 50 },
         videoId,
         videoName,
         caption,
@@ -691,6 +693,7 @@ export function PostingPlan({ images, videos, tone = "", businessType = "sonstig
     analyzedSlots,
     baseDate,
     businessType,
+    cropPositions,
     editedCaptions,
     editedHashtags,
     imageOverrides,

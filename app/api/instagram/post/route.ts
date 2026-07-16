@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import sharp from "sharp";
 import { uploadToWebspace, deleteFromWebspace } from "@/lib/ftp-upload";
 import { postCarouselToInstagram, postReelToInstagram, postStoryToInstagram, postToInstagram } from "@/lib/instagram-api";
 
@@ -12,6 +13,7 @@ type PostRequestBody = {
   imageUrls?: string[];
   videoUrl?: string;
   postType?: "feed" | "carousel" | "story" | "reel";
+  cropPosition?: { x: number; y: number };
   testOnly?: boolean;
 };
 
@@ -34,6 +36,91 @@ function getExtension(file: File) {
   if (file.type === "video/quicktime") return "mov";
   if (file.type === "image/png") return "png";
   return "jpg";
+}
+
+const imageFormats: Record<Exclude<NonNullable<PostRequestBody["postType"]>, "reel">, { width: number; height: number; label: string }> = {
+  feed: { width: 1080, height: 1350, label: "feed-4x5" },
+  carousel: { width: 1080, height: 1350, label: "carousel-4x5" },
+  story: { width: 1080, height: 1920, label: "story-9x16" }
+};
+
+function getTargetImageFormat(postType: PostRequestBody["postType"]) {
+  if (postType === "story") return imageFormats.story;
+  if (postType === "carousel") return imageFormats.carousel;
+  return imageFormats.feed;
+}
+
+function clampCropPercent(value: unknown) {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return 50;
+  return Math.max(0, Math.min(100, numeric));
+}
+
+function parseCropPosition(form: FormData): { x: number; y: number } {
+  return {
+    x: clampCropPercent(form.get("cropX")),
+    y: clampCropPercent(form.get("cropY"))
+  };
+}
+
+function calculateCoverCrop(source: { width: number; height: number }, target: { width: number; height: number }, cropPosition: { x: number; y: number }) {
+  const sourceRatio = source.width / source.height;
+  const targetRatio = target.width / target.height;
+
+  if (sourceRatio > targetRatio) {
+    const width = Math.max(1, Math.round(source.height * targetRatio));
+    const left = Math.round((source.width - width) * (cropPosition.x / 100));
+    return {
+      left: Math.max(0, Math.min(source.width - width, left)),
+      top: 0,
+      width,
+      height: source.height
+    };
+  }
+
+  const height = Math.max(1, Math.round(source.width / targetRatio));
+  const top = Math.round((source.height - height) * (cropPosition.y / 100));
+  return {
+    left: 0,
+    top: Math.max(0, Math.min(source.height - height, top)),
+    width: source.width,
+    height
+  };
+}
+
+async function prepareInstagramImage(buffer: Buffer, postType: PostRequestBody["postType"], cropPosition = { x: 50, y: 50 }) {
+  const format = getTargetImageFormat(postType);
+  const normalized = await sharp(buffer, { failOn: "none" })
+    .rotate()
+    .flatten({ background: "#ffffff" })
+    .toBuffer({ resolveWithObject: true });
+
+  const sourceWidth = normalized.info.width;
+  const sourceHeight = normalized.info.height;
+  const crop = calculateCoverCrop(
+    { width: sourceWidth, height: sourceHeight },
+    { width: format.width, height: format.height },
+    cropPosition
+  );
+
+  const output = await sharp(normalized.data)
+    .extract(crop)
+    .resize(format.width, format.height, { fit: "fill" })
+    .jpeg({
+      quality: 92,
+      mozjpeg: true
+    })
+    .toBuffer();
+
+  return { buffer: output, format };
+}
+
+async function fetchImageUrl(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Bild konnte nicht geladen werden: ${url}`);
+  }
+  return Buffer.from(await response.arrayBuffer());
 }
 
 function loadServerInstagramConfig() {
@@ -75,6 +162,7 @@ async function readRequestBody(request: Request): Promise<{ body: PostRequestBod
       accessToken: typeof form.get("accessToken") === "string" ? String(form.get("accessToken")) : undefined,
       instagramAccountId: typeof form.get("instagramAccountId") === "string" ? String(form.get("instagramAccountId")) : undefined,
       postType: typeof form.get("postType") === "string" ? String(form.get("postType")) as PostRequestBody["postType"] : undefined,
+      cropPosition: parseCropPosition(form),
       testOnly: String(form.get("testOnly")) === "true"
     },
     files: images,
@@ -89,6 +177,7 @@ export async function POST(request: Request) {
     const { body, files, videos } = await readRequestBody(request);
     const caption = body.caption?.trim() ?? "";
     const postType = body.postType ?? "feed";
+    const cropPosition = body.cropPosition ?? { x: 50, y: 50 };
     const serverConfig = loadServerInstagramConfig();
     const accessToken = body.accessToken?.trim() || serverConfig?.accessToken || "";
     const instagramAccountId = body.instagramAccountId?.trim() || serverConfig?.accountId || "";
@@ -137,19 +226,25 @@ export async function POST(request: Request) {
     const publicUrls: string[] = [];
     const publicVideoUrls: string[] = [];
 
-    if (imageUrls.length > 0) {
-      publicUrls.push(...imageUrls);
-    }
-
     if (videoUrls.length > 0) {
       publicVideoUrls.push(...videoUrls);
     }
 
+    for (const [index, imageUrl] of imageUrls.entries()) {
+      const imageBuffer = await fetchImageUrl(imageUrl);
+      const prepared = await prepareInstagramImage(imageBuffer, postType, cropPosition);
+      const filename = `wf_${randomUUID()}_remote_${index + 1}_${prepared.format.label}.jpg`;
+      uploadedFiles.push(filename);
+      const publicUrl = await uploadToWebspace(prepared.buffer, filename);
+      publicUrls.push(publicUrl);
+    }
+
     for (const [index, file] of files.entries()) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const filename = `wf_${randomUUID()}_${index + 1}.${getExtension(file)}`;
+      const prepared = await prepareInstagramImage(buffer, postType, cropPosition);
+      const filename = `wf_${randomUUID()}_${index + 1}_${prepared.format.label}.jpg`;
       uploadedFiles.push(filename);
-      const publicUrl = await uploadToWebspace(buffer, filename);
+      const publicUrl = await uploadToWebspace(prepared.buffer, filename);
       publicUrls.push(publicUrl);
     }
 

@@ -133,6 +133,8 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
 
     form.append("caption", caption);
     form.append("postType", post.type === "story" ? "story" : post.type === "reel" ? "reel" : post.type === "carousel" ? "carousel" : "feed");
+    form.append("cropX", String(post.cropPosition.x));
+    form.append("cropY", String(post.cropPosition.y));
     if (config?.accessToken) form.append("accessToken", config.accessToken);
     if (config?.accountId) form.append("instagramAccountId", config.accountId);
 
