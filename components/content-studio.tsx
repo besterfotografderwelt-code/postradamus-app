@@ -32,6 +32,12 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
   const [plannedPosts, setPlannedPosts] = useState<PlannedPost[]>([]);
   const firstGen = useRef(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const automationTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearAutomationTimers = useCallback(() => {
+    automationTimers.current.forEach((timer) => clearTimeout(timer));
+    automationTimers.current = [];
+  }, []);
 
   useEffect(() => {
     let c = false;
@@ -54,6 +60,8 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
       if (saveTimeout.current) clearTimeout(saveTimeout.current);
     };
   }, [draft, output, project.id]);
+
+  useEffect(() => clearAutomationTimers, [clearAutomationTimers]);
 
   const generateContent = useCallback(async (selectedTone = tone) => {
     setIsGenerating(true); setMessage("");
@@ -163,6 +171,7 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
       const duePosts = publishablePosts.filter((post) => new Date(post.scheduledAt).getTime() <= now);
       const futurePosts = publishablePosts.filter((post) => new Date(post.scheduledAt).getTime() > now);
       const postedIds = new Set<string>();
+      let browserFallbackCount = 0;
       const clientConfig = config.accessToken && config.accountId ? config : undefined;
 
       for (const post of duePosts) {
@@ -171,7 +180,18 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
       }
 
       for (const post of futurePosts) {
-        await publishPlannedPost(post, clientConfig, "schedule");
+        try {
+          await publishPlannedPost(post, clientConfig, "schedule");
+        } catch {
+          browserFallbackCount++;
+          const delay = Math.max(0, new Date(post.scheduledAt).getTime() - Date.now());
+          const timer = setTimeout(() => {
+            void publishPlannedPost(post, clientConfig).catch((error) => {
+              setPostResult(`❌ Geplanter Post fehlgeschlagen: ${error instanceof Error ? error.message : "Unbekannter Fehler."}`);
+            });
+          }, delay);
+          automationTimers.current.push(timer);
+        }
       }
 
       localStorage.setItem(`weddingflow.posting-plan.${project.id}`, JSON.stringify({
@@ -181,7 +201,11 @@ export function ContentStudio({ project, images, videos, onFirstOutput }: Conten
       }));
 
       const postedInfo = postedIds.size > 0 ? `${postedIds.size} fällige Posts veröffentlicht. ` : "";
-      const scheduledInfo = futurePosts.length > 0 ? `${futurePosts.length} weitere Posts sind serverseitig geplant.` : "Keine weiteren Posts offen.";
+      const scheduledInfo = futurePosts.length > 0
+        ? browserFallbackCount > 0
+          ? `${futurePosts.length} weitere Posts sind geplant; ${browserFallbackCount} laufen bis zur Datenbank-Aktivierung im Browser-Fallback.`
+          : `${futurePosts.length} weitere Posts sind serverseitig geplant.`
+        : "Keine weiteren Posts offen.";
       const unsupportedInfo = unsupportedCount > 0 ? ` ${unsupportedCount} Reel-Slots bleiben vorbereitet – lade ein Video hoch, um sie zu posten.` : "";
       setPostResult(`🎉 Posting-Plan gestartet. ${postedInfo}${scheduledInfo}${unsupportedInfo}`);
 
