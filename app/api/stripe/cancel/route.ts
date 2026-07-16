@@ -12,16 +12,23 @@ export async function POST() {
   }
 
   try {
-    // Create a Stripe Customer Portal session for self-service cancellation
+    const email = auth.user.email;
+    if (!email) {
+      return NextResponse.json({ error: "Keine E-Mail-Adresse am Konto gefunden." }, { status: 400 });
+    }
+
+    const customers = await stripe.customers.list({ email, limit: 10 });
+    const customer = customers.data.find((item) => !item.deleted);
+    if (!customer) {
+      return NextResponse.json({
+        message:
+          "Zu deinem Konto wurde noch kein Stripe-Abo gefunden. Bitte kontaktiere uns unter info@besterfotografderwelt.com.",
+      });
+    }
+
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: auth.user.id,
+      customer: customer.id,
       return_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://postradamus.ai"}/kundenbereich`,
-      flow_data: {
-        type: "subscription_cancel",
-        subscription_cancel: {
-          subscription: auth.user.id,
-        },
-      },
     });
 
     return NextResponse.json({ portalUrl: portalSession.url });

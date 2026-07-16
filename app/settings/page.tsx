@@ -55,7 +55,7 @@ export default function SettingsPage() {
       const checkRes = await fetch("/api/instagram/check-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessToken: config.accessToken, autoRefresh: true })
+        body: JSON.stringify({ accessToken: config.accessToken || undefined, autoRefresh: true })
       });
       const checkData = await checkRes.json();
 
@@ -79,8 +79,8 @@ export default function SettingsPage() {
         body: JSON.stringify({
           imageUrls: [],
           caption: "Test",
-          accessToken: checkData.accessToken || config.accessToken,
-          instagramAccountId: config.accountId,
+          accessToken: checkData.accessToken || config.accessToken || undefined,
+          instagramAccountId: config.accountId || undefined,
           testOnly: true
         })
       });
@@ -99,7 +99,7 @@ export default function SettingsPage() {
     }
   }
 
-  const isConfigured = config.accessToken && config.accountId;
+  const isConfigured = Boolean(config.accessToken || config.accountId || config.username);
 
   return (
     <div className="narrow-page" style={{ marginBottom: 40 }}>

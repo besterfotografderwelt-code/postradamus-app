@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { requireAuthenticatedUser } from "@/lib/authenticated-route";
 import { graphApiUrl } from "@/lib/app-config";
+import { saveInstagramServerConfig } from "@/lib/instagram-server-config";
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuthenticatedUser();
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: "Bitte anmelden." }, { status: 401 });
+    }
+
     const { code } = await request.json() as { code?: string };
     if (!code) {
       return NextResponse.json({ error: "Autorisierungscode fehlt." }, { status: 400 });
@@ -12,7 +17,7 @@ export async function POST(request: Request) {
 
     const clientId = process.env.INSTAGRAM_CLIENT_ID || "CHANGE_ME";
     const clientSecret = process.env.INSTAGRAM_CLIENT_SECRET || "";
-    const redirectUri = process.env.INSTAGRAM_REDIRECT_URI || `${request.headers.get("origin") || "http://localhost:3000"}/auth/instagram/callback`;
+    const redirectUri = process.env.INSTAGRAM_REDIRECT_URI || `${new URL(request.url).origin}/auth/instagram/callback`;
 
     if (!clientSecret) {
       return NextResponse.json(
@@ -139,16 +144,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Save token server-side for auto-refresh
     try {
-      const dataDir = join(process.cwd(), "data");
-      if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
-      writeFileSync(join(dataDir, "instagram-token.json"), JSON.stringify({
+      saveInstagramServerConfig({
         accessToken,
         accountId,
         username,
         savedAt: new Date().toISOString()
-      }));
+      });
     } catch { /* non-critical */ }
 
     return NextResponse.json({ connected: true, accountId, username });

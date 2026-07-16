@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { requireAuthenticatedUser } from "@/lib/authenticated-route";
 import { uploadToWebspace, deleteFromWebspace } from "@/lib/ftp-upload";
+import { loadInstagramServerConfig } from "@/lib/instagram-server-config";
 import { fetchImageUrl, getExtension, isFile, parseCropPosition, prepareInstagramImage } from "@/lib/instagram-media";
 import { postCarouselToInstagram, postReelToInstagram, postStoryToInstagram, postToInstagram } from "@/lib/instagram-api";
 
@@ -27,21 +27,6 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 async function cleanupUploadedFiles(filenames: string[]) {
   await Promise.all(filenames.map((filename) => deleteFromWebspace(filename).catch(() => {})));
-}
-
-function loadServerInstagramConfig() {
-  try {
-    const tokenPath = join(process.cwd(), "data", "instagram-token.json");
-    if (!existsSync(tokenPath)) return null;
-    const data = JSON.parse(readFileSync(tokenPath, "utf8")) as {
-      accessToken?: string;
-      accountId?: string;
-    };
-    if (!data.accessToken || !data.accountId) return null;
-    return { accessToken: data.accessToken, accountId: data.accountId };
-  } catch {
-    return null;
-  }
 }
 
 async function readRequestBody(request: Request): Promise<{ body: PostRequestBody; files: File[]; videos: File[] }> {
@@ -80,11 +65,16 @@ export async function POST(request: Request) {
   const uploadedFiles: string[] = [];
 
   try {
+    const auth = await requireAuthenticatedUser();
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: "Bitte anmelden." }, { status: 401 });
+    }
+
     const { body, files, videos } = await readRequestBody(request);
     const caption = body.caption?.trim() ?? "";
     const postType = body.postType ?? "feed";
     const cropPosition = body.cropPosition ?? { x: 50, y: 50 };
-    const serverConfig = loadServerInstagramConfig();
+    const serverConfig = loadInstagramServerConfig();
     const accessToken = body.accessToken?.trim() || serverConfig?.accessToken || "";
     const instagramAccountId = body.instagramAccountId?.trim() || serverConfig?.accountId || "";
 
@@ -102,7 +92,7 @@ export async function POST(request: Request) {
     // Silently attempt token refresh before posting
     let activeToken = accessToken;
     try {
-      const origin = request.headers.get("origin") || "http://localhost:3000";
+      const origin = new URL(request.url).origin;
       const refreshRes = await fetch(`${origin}/api/instagram/refresh-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

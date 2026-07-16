@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { requireAuthenticatedUser } from "@/lib/authenticated-route";
 import { graphApiUrl } from "@/lib/app-config";
+import { loadInstagramServerConfig, saveInstagramServerConfig } from "@/lib/instagram-server-config";
 
 /**
  * Refreshes a long-lived Instagram access token.
@@ -10,12 +10,16 @@ import { graphApiUrl } from "@/lib/app-config";
  */
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuthenticatedUser();
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: "Bitte anmelden." }, { status: 401 });
+    }
+
     const body = await request.json() as { accessToken?: string };
-    const fallbackTokenPath = join(process.cwd(), "data", "instagram-token.json");
-    const fallbackToken = existsSync(fallbackTokenPath)
-      ? (JSON.parse(readFileSync(fallbackTokenPath, "utf8")) as { accessToken?: string }).accessToken?.trim()
-      : "";
+    const serverConfig = loadInstagramServerConfig();
+    const fallbackToken = serverConfig?.accessToken ?? "";
     const token = body.accessToken?.trim() || fallbackToken;
+    const usedServerToken = !body.accessToken?.trim() && Boolean(fallbackToken);
     if (!token) {
       return NextResponse.json({ error: "Kein Token vorhanden." }, { status: 400 });
     }
@@ -41,24 +45,17 @@ export async function POST(request: Request) {
       }, { status: 200 }); // 200 so client can handle gracefully
     }
 
-    // Save refreshed token server-side for auto-refresh
     try {
-      const dataDir = join(process.cwd(), "data");
-      if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
-      const tokenPath = join(dataDir, "instagram-token.json");
-      const existing = existsSync(tokenPath)
-        ? JSON.parse(readFileSync(tokenPath, "utf8"))
-        : {};
-      writeFileSync(tokenPath, JSON.stringify({
-        ...existing,
+      saveInstagramServerConfig({
         accessToken: data.access_token,
         refreshedAt: new Date().toISOString()
-      }));
+      });
     } catch { /* non-critical */ }
 
     return NextResponse.json({
       success: true,
-      accessToken: data.access_token,
+      accessToken: usedServerToken ? undefined : data.access_token,
+      serverManaged: usedServerToken,
       expiresIn: data.expires_in || 5184000 // ~60 days
     });
   } catch (error) {

@@ -1,8 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { deleteFromWebspace } from "@/lib/ftp-upload";
+import { loadInstagramServerConfig } from "@/lib/instagram-server-config";
 import { postCarouselToInstagram, postReelToInstagram, postStoryToInstagram, postToInstagram } from "@/lib/instagram-api";
 
 type ScheduledPost = {
@@ -18,7 +17,7 @@ type ScheduledPost = {
 
 function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) return process.env.NODE_ENV !== "production";
   return request.headers.get("authorization") === `Bearer ${secret}` ||
     request.headers.get("x-cron-secret") === secret;
 }
@@ -28,17 +27,6 @@ function supabaseAdmin() {
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
     process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
   );
-}
-
-function loadServerInstagramConfig() {
-  const tokenPath = join(process.cwd(), "data", "instagram-token.json");
-  if (!existsSync(tokenPath)) return null;
-  const data = JSON.parse(readFileSync(tokenPath, "utf8")) as {
-    accessToken?: string;
-    accountId?: string;
-  };
-  if (!data.accessToken || !data.accountId) return null;
-  return { accessToken: data.accessToken, accountId: data.accountId };
 }
 
 async function publishScheduledPost(post: ScheduledPost, accessToken: string, fallbackAccountId: string) {
@@ -94,7 +82,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const config = loadServerInstagramConfig();
+  const config = loadInstagramServerConfig();
   if (!config) {
     return NextResponse.json({ error: "Instagram-Serververbindung fehlt." }, { status: 500 });
   }

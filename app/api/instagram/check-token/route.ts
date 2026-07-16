@@ -1,23 +1,19 @@
 import { NextResponse } from "next/server";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { requireAuthenticatedUser } from "@/lib/authenticated-route";
 import { graphApiUrl } from "@/lib/app-config";
-
-function loadServerToken() {
-  try {
-    const tokenPath = join(process.cwd(), "data", "instagram-token.json");
-    if (!existsSync(tokenPath)) return "";
-    const data = JSON.parse(readFileSync(tokenPath, "utf8")) as { accessToken?: string };
-    return data.accessToken?.trim() ?? "";
-  } catch {
-    return "";
-  }
-}
+import { loadInstagramServerConfig } from "@/lib/instagram-server-config";
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuthenticatedUser();
+    if (!auth.authenticated) {
+      return NextResponse.json({ valid: false, message: "Bitte anmelden.", action: "login" }, { status: 401 });
+    }
+
     const body = await request.json() as { accessToken?: string; autoRefresh?: boolean };
-    const token = body.accessToken?.trim() || loadServerToken();
+    const serverToken = loadInstagramServerConfig()?.accessToken ?? "";
+    const token = body.accessToken?.trim() || serverToken;
+    const usedServerToken = !body.accessToken?.trim() && Boolean(serverToken);
     if (!token) {
       return NextResponse.json({ valid: false, message: "Kein Token vorhanden.", action: "reconnect" });
     }
@@ -51,10 +47,10 @@ export async function POST(request: Request) {
     // Token is valid - check if we should try to refresh
     if (body.autoRefresh !== false) {
       try {
-        const refreshRes = await fetch(`${request.headers.get("origin") || "http://localhost:3000"}/api/instagram/refresh-token`, {
+        const refreshRes = await fetch(`${new URL(request.url).origin}/api/instagram/refresh-token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ accessToken: token })
+          body: JSON.stringify(usedServerToken ? {} : { accessToken: token })
         });
         const refreshData = await refreshRes.json();
 
@@ -68,6 +64,16 @@ export async function POST(request: Request) {
             message: "Token wurde automatisch erneuert."
           });
         }
+        if (refreshData.success && refreshData.serverManaged) {
+          return NextResponse.json({
+            valid: true,
+            refreshed: true,
+            serverManaged: true,
+            expiresIn: refreshData.expiresIn || 5184000,
+            daysLeft: Math.floor((refreshData.expiresIn || 5184000) / 86400),
+            message: "Serverseitiger Token wurde automatisch erneuert."
+          });
+        }
       } catch {
         // Refresh failed silently - token still valid, just not refreshed
       }
@@ -76,6 +82,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       valid: true,
       refreshed: false,
+      serverManaged: usedServerToken,
       message: "Token gültig."
     });
   } catch {
