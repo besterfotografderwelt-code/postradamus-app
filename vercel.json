@@ -1,7 +1,4 @@
 {
-  "crons": [
-    { "path": "/api/instagram/run-scheduled", "schedule": "*/5 * * * *" }
-  ],
   "redirects": [
     { "source": "/:path*", "has": [{ "type": "host", "value": "www.postradamus.ai" }], "destination": "https://postradamus.ai/:path*", "permanent": true }
   ]
